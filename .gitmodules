@@ -1,0 +1,3 @@
+[submodule "dependencies/libwifi"]
+	path = dependencies/libwifi
+	url = https://github.com/vanhoefm/libwifi

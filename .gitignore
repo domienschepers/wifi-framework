@@ -1,0 +1,13 @@
+*.d
+*.o
+dependencies/hostap*/hostapd/hostapd
+dependencies/hostap*/hostapd/hostapd_cli
+dependencies/hostap*/wpa_supplicant/wpa_cli
+dependencies/hostap*/wpa_supplicant/wpa_passphrase
+dependencies/hostap*/wpa_supplicant/wpa_supplicant
+__pycache__/
+
+dependencies/hostap_2_5/*
+dependencies/hostap_2_6/*
+
+setup/venv/*

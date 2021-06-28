@@ -1,0 +1,179 @@
+diff --git b/hostap_2_9/hostapd/Makefile a/hostap_2_9/hostapd/Makefile
+index 2a6bd7a..00e9da9 100644
+--- b/hostap_2_9/hostapd/Makefile
++++ a/hostap_2_9/hostapd/Makefile
+@@ -44,6 +44,10 @@ CFLAGS += -DCONFIG_TESTING_OPTIONS
+ CONFIG_WPS_TESTING=y
+ endif
+ 
++ifdef CONFIG_FRAMEWORK_EXTENSIONS
++CFLAGS += -DCONFIG_FRAMEWORK_EXTENSIONS
++endif
++
+ ifndef CONFIG_OS
+ ifdef CONFIG_NATIVE_WINDOWS
+ CONFIG_OS=win32
+diff --git b/hostap_2_9/hostapd/ctrl_iface.c a/hostap_2_9/hostapd/ctrl_iface.c
+index 0f6dfa1..9b8dff1 100644
+--- b/hostap_2_9/hostapd/ctrl_iface.c
++++ a/hostap_2_9/hostapd/ctrl_iface.c
+@@ -2942,6 +2942,14 @@ static int hostapd_ctrl_iface_receive_process(struct hostapd_data *hapd,
+ {
+ 	int reply_len, res;
+ 
++#ifdef CONFIG_FRAMEWORK_EXTENSIONS
++	int console = 0;
++	if (os_strncmp(buf, "> ", 2) == 0) {
++		console = 1;
++		buf += 2;
++	}
++#endif /* CONFIG_FRAMEWORK_EXTENSIONS */
++
+ 	os_memcpy(reply, "OK\n", 3);
+ 	reply_len = 3;
+ 
+@@ -3382,6 +3390,17 @@ static int hostapd_ctrl_iface_receive_process(struct hostapd_data *hapd,
+ 		os_memcpy(reply, "FAIL\n", 5);
+ 		reply_len = 5;
+ 	}
++	
++#ifdef CONFIG_FRAMEWORK_EXTENSIONS
++	if (console) {
++		if (reply_len + 2 >= reply_size)
++			reply = os_realloc(reply, reply_size + 2);
++		memmove(reply + 2, reply, reply_len);
++		reply[0] = '>';
++		reply[1] = ' ';
++		reply_len += 2;
++	}
++#endif /* CONFIG_FRAMEWORK_EXTENSIONS */
+ 
+ 	return reply_len;
+ }
+diff --git b/hostap_2_9/src/ap/drv_callbacks.c a/hostap_2_9/src/ap/drv_callbacks.c
+index 3158768..cc99a58 100644
+--- b/hostap_2_9/src/ap/drv_callbacks.c
++++ a/hostap_2_9/src/ap/drv_callbacks.c
+@@ -182,6 +182,11 @@ int hostapd_notif_assoc(struct hostapd_data *hapd, const u8 *addr,
+ 	}
+ 	sta->flags &= ~(WLAN_STA_WPS | WLAN_STA_MAYBE_WPS | WLAN_STA_WPS2);
+ 
++#ifdef CONFIG_FRAMEWORK_EXTENSIONS
++	wpa_msg(hapd->msg_ctx, MSG_INFO, "AP-STA-ASSOCIATING " MACSTR,
++		 MAC2STR(sta->addr));
++#endif /* CONFIG_FRAMEWORK_EXTENSIONS */
++
+ 	/*
+ 	 * ACL configurations to the drivers (implementing AP SME and ACL
+ 	 * offload) without hostapd's knowledge, can result in a disconnection
+diff --git b/hostap_2_9/src/ap/ieee802_11.c a/hostap_2_9/src/ap/ieee802_11.c
+index c85a28d..d127bee 100644
+--- b/hostap_2_9/src/ap/ieee802_11.c
++++ a/hostap_2_9/src/ap/ieee802_11.c
+@@ -4182,6 +4182,11 @@ static void handle_assoc(struct hostapd_data *hapd,
+ 	}
+ #endif /* CONFIG_FILS */
+ 
++#ifdef CONFIG_FRAMEWORK_EXTENSIONS
++	wpa_msg(hapd->msg_ctx, MSG_INFO, "AP-STA-ASSOCIATING " MACSTR,
++		 MAC2STR(sta->addr));
++#endif /* CONFIG_FRAMEWORK_EXTENSIONS */
++
+  fail:
+ 	os_free(identity);
+ 	os_free(radius_cui);
+diff --git b/hostap_2_9/wpa_supplicant/Makefile a/hostap_2_9/wpa_supplicant/Makefile
+index f1384d5..5810751 100644
+--- b/hostap_2_9/wpa_supplicant/Makefile
++++ a/hostap_2_9/wpa_supplicant/Makefile
+@@ -44,6 +44,11 @@ CONFIG_WPS_TESTING=y
+ CONFIG_TDLS_TESTING=y
+ endif
+ 
++ifdef CONFIG_FRAMEWORK_EXTENSIONS
++CFLAGS += -DCONFIG_FRAMEWORK_EXTENSIONS
++CFLAGS += -DCONFIG_TESTING_GET_GTK
++endif
++
+ BINALL=wpa_supplicant wpa_cli
+ 
+ ifndef CONFIG_NO_WPA_PASSPHRASE
+diff --git b/hostap_2_9/wpa_supplicant/ctrl_iface.c a/hostap_2_9/wpa_supplicant/ctrl_iface.c
+index 8efc08d..46dd863 100644
+--- b/hostap_2_9/wpa_supplicant/ctrl_iface.c
++++ a/hostap_2_9/wpa_supplicant/ctrl_iface.c
+@@ -805,6 +805,15 @@ static int wpa_supplicant_ctrl_iface_get(struct wpa_supplicant *wpa_s,
+ #endif /* CONFIG_TESTING_GET_GTK */
+ 	} else if (os_strcmp(cmd, "tls_library") == 0) {
+ 		res = tls_get_library_version(buf, buflen);
++#ifdef CONFIG_FRAMEWORK_EXTENSIONS
++	} else if (os_strcmp(cmd, "tk") == 0) {
++		if (wpa_s->last_tk_len == 0)
++			res = os_snprintf(buf, buflen, "none");
++		else
++			res = wpa_snprintf_hex(buf, buflen, wpa_s->last_tk,
++					       wpa_s->last_tk_len);
++		return res;
++#endif /* CONFIG_FRAMEWORK_EXTENSIONS */
+ #ifdef CONFIG_TESTING_OPTIONS
+ 	} else if (os_strcmp(cmd, "anonce") == 0) {
+ 		return wpa_snprintf_hex(buf, buflen,
+@@ -820,6 +829,13 @@ static int wpa_supplicant_ctrl_iface_get(struct wpa_supplicant *wpa_s,
+ 	return res;
+ }
+ 
++#ifdef CONFIG_FRAMEWORK_EXTENSIONS
++static int wpa_supplicant_ctrl_iface_get_bssid(
++	struct wpa_supplicant *wpa_s, char *buf, size_t buflen)
++{
++	return os_snprintf(buf, buflen, MACSTR, MAC2STR(wpa_s->bssid));
++}
++#endif /* CONFIG_FRAMEWORK_EXTENSIONS */
+ 
+ #ifdef IEEE8021X_EAPOL
+ static int wpa_supplicant_ctrl_iface_preauth(struct wpa_supplicant *wpa_s,
+@@ -9918,6 +9934,14 @@ char * wpa_supplicant_ctrl_iface_process(struct wpa_supplicant *wpa_s,
+ 	const int reply_size = 4096;
+ 	int reply_len;
+ 
++#ifdef CONFIG_FRAMEWORK_EXTENSIONS
++	int console = 0;
++	if (os_strncmp(buf, "> ", 2) == 0) {
++		console = 1;
++		buf += 2;
++	}
++#endif /* CONFIG_FRAMEWORK_EXTENSIONS */
++	
+ 	if (os_strncmp(buf, WPA_CTRL_RSP, os_strlen(WPA_CTRL_RSP)) == 0 ||
+ 	    os_strncmp(buf, "SET_NETWORK ", 12) == 0 ||
+ 	    os_strncmp(buf, "PMKSA_ADD ", 10) == 0 ||
+@@ -10753,6 +10777,11 @@ char * wpa_supplicant_ctrl_iface_process(struct wpa_supplicant *wpa_s,
+ 		dpp_controller_stop(wpa_s->dpp);
+ #endif /* CONFIG_DPP2 */
+ #endif /* CONFIG_DPP */
++#ifdef CONFIG_FRAMEWORK_EXTENSIONS
++	} else if (os_strcmp(buf, "GET_BSSID") == 0) {
++		reply_len = wpa_supplicant_ctrl_iface_get_bssid(
++			wpa_s, reply, reply_size);
++#endif /* CONFIG_FRAMEWORK_EXTENSIONS */
+ 	} else {
+ 		os_memcpy(reply, "UNKNOWN COMMAND\n", 16);
+ 		reply_len = 16;
+@@ -10763,6 +10792,17 @@ char * wpa_supplicant_ctrl_iface_process(struct wpa_supplicant *wpa_s,
+ 		reply_len = 5;
+ 	}
+ 
++#ifdef CONFIG_FRAMEWORK_EXTENSIONS
++	if (console) {
++		if (reply_len + 2 >= reply_size)
++			reply = os_realloc(reply, reply_size + 2);
++		memmove(reply + 2, reply, reply_len);
++		reply[0] = '>';
++		reply[1] = ' ';
++		reply_len += 2;
++	}
++#endif /* CONFIG_FRAMEWORK_EXTENSIONS */
++
+ 	*resp_len = reply_len;
+ 	return reply;
+ }
