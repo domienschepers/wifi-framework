@@ -1,6 +1,6 @@
 # Examples
 
-<sup>See [the source code of all our examples.](test-examples.py)
+<sup>See [the source code of all our examples.](../test-examples.py)
 
 Our framework supports a variety of use cases, and here we present some examples together with their usage instructions.
 
