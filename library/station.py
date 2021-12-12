@@ -13,8 +13,11 @@ class Station(Daemon):
 	"""A station is an Authenticator or Supplicant which executes a test case."""
 	
 	def __init__(self,options):
-		self.test = options.test()
-		del options.test # Irrelevant for Daemon.
+		self.test = None
+		if "test" in options:
+			self.test = options.test
+			del options.test # Irrelevant for Daemon.
+
 		super().__init__(options)
 		
 		# Function handler and iface when in receive modus.
@@ -112,6 +115,7 @@ class Authenticator(Station):
 	"""Authenticator Station."""
 	
 	def __init__(self,options):
+		options.ap = True
 		super().__init__(options)
 		
 		# Authenticator-specific sequence numbers.
@@ -153,6 +157,7 @@ class Supplicant(Station):
 	"""Supplicant Station."""
 
 	def __init__(self,options):
+		options.ap = False
 		super().__init__(options)
 		
 		# Supplicant-specific sequence numbers and encryption keys.
@@ -174,7 +179,7 @@ class Supplicant(Station):
 		if optimized is not None:
 			self.wpaspy_command("SET reassoc_same_bss_optim " + str(optimized))
 		self.wpaspy_command("REASSOCIATE")
-#		self.clear_keys()
+		#self.clear_keys()
 		
 	def get_header(self):
 		"""Construct a Dot11-header."""

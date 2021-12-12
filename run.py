@@ -6,6 +6,7 @@ import atexit
 from dependencies.libwifi.wifi import *
 from library.station import Authenticator, Supplicant
 from library.testcase import Test
+from library.daemon import Daemon
 
 # Metadata.
 NAME = "Wi-Fi Framework"
@@ -51,18 +52,23 @@ if __name__ == "__main__":
 	change_log_level(-options.debug)
 	
 	# Load the requested test.
-	options.test = dynamically_load_test(options.name)
-	if options.test == None:
+	test_class = dynamically_load_test(options.name)
+	if test_class == None:
 		log(STATUS, f"Test name '{options.name}' not found.")
 		quit(1)
 	del options.name
 
-	# Load the station.
-	options.ap = (options.test.kind == Test.Authenticator)
-	if options.test.kind == Test.Authenticator:
-		station = Authenticator(options)
-	elif options.test.kind == Test.Supplicant:
-		station = Supplicant(options)
+	# Detect the type of test and instantiate it
+	if issubclass(test_class, Daemon):
+		# Create a Daemon instance and execute that
+		station = test_class(options)
+	else:
+		# Load the station to execute the test case
+		options.test = test_class()
+		if options.test.kind == Test.Authenticator:
+			station = Authenticator(options)
+		elif options.test.kind == Test.Supplicant:
+			station = Supplicant(options)
 		
 	# Run the requested test kind.
 	atexit.register(cleanup)
