@@ -39,7 +39,9 @@ class Daemon():
 		# Configure interfaces and sockets.
 		self.__configure_interfaces()
 		self.mac = scapy.arch.get_if_hwaddr(self.nic_iface)
-		self.sock_eth = L2Socket(type=ETH_P_ALL, iface=self.nic_iface)
+
+		# The Eterhet socket can only be created once hostap brings the interface up
+		self.sock_eth = None
 		self.sock_mon = MonitorSocket(type=ETH_P_ALL, iface=self.nic_mon)
 		
 		# Daemons can be operating as an authenticator or supplicant.
@@ -196,7 +198,10 @@ class Daemon():
 
 		# After we connected to the daemon we know all interfaces have started
 		self.__wpaspy_connect()
-		
+
+		# Now that hostap started we can create the ethernet socket
+		self.sock_eth = L2Socket(type=ETH_P_ALL, iface=self.nic_iface)
+
 		# Monitor the virtual monitor interface of the client and perform the needed actions
 		sockets = [self.sock_mon, self.sock_eth, self.wpaspy_ctrl.s]
 		while True:
