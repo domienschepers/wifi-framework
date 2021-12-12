@@ -35,6 +35,9 @@
 #define STATE_MACHINE_DEBUG_PREFIX "WPA"
 #define STATE_MACHINE_ADDR sm->addr
 
+#ifdef CONFIG_FRAMEWORK_EXTENSIONS
+int fuzzer_skip_4way = 0;
+#endif /* CONFIG_FRAMEWORK_EXTENSIONS */
 
 static void wpa_send_eapol_timeout(void *eloop_ctx, void *timeout_ctx);
 static int wpa_sm_step(struct wpa_state_machine *sm);
@@ -628,6 +631,16 @@ int wpa_auth_sta_associated(struct wpa_authenticator *wpa_auth,
 {
 	if (wpa_auth == NULL || !wpa_auth->conf.wpa || sm == NULL)
 		return -1;
+
+#ifdef CONFIG_FRAMEWORK_EXTENSIONS
+	if (fuzzer_skip_4way) {
+		wpa_auth_logger(wpa_auth, sm->addr, LOGGER_DEBUG,
+						"Skipping 4-way handshake");
+		wpa_auth_set_eapol(sm->wpa_auth, sm->addr,
+						   WPA_EAPOL_authorized, 1);
+		return -1;
+	}
+#endif /* CONFIG_FRAMEWORK_EXTENSIONS */
 
 #ifdef CONFIG_IEEE80211R_AP
 	if (sm->ft_completed) {
@@ -4547,6 +4560,18 @@ wpa_auth_pmksa_get(struct wpa_authenticator *wpa_auth, const u8 *sta_addr,
 		return NULL;
 	return pmksa_cache_auth_get(wpa_auth->pmksa, sta_addr, pmkid);
 }
+
+
+#ifdef CONFIG_FRAMEWORK_EXTENSIONS
+const u8 * wpa_auth_rsne_get(struct wpa_authenticator *wpa_auth, int *wpa_ie_len)
+{
+	if (wpa_ie_len == NULL)
+		return NULL;
+
+	*wpa_ie_len = wpa_auth->wpa_ie_len;
+	return wpa_auth->wpa_ie;
+}
+#endif /* CONFIG_FRAMEWORK_EXTENSIONS */
 
 
 void wpa_auth_pmksa_set_to_sm(struct rsn_pmksa_cache_entry *pmksa,

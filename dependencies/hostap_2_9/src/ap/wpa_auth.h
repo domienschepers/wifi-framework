@@ -391,6 +391,9 @@ int wpa_auth_pmksa_add_entry(struct wpa_authenticator *wpa_auth,
 struct rsn_pmksa_cache_entry *
 wpa_auth_pmksa_get(struct wpa_authenticator *wpa_auth, const u8 *sta_addr,
 		   const u8 *pmkid);
+#ifdef CONFIG_FRAMEWORK_EXTENSIONS
+const u8 * wpa_auth_rsne_get(struct wpa_authenticator *wpa_auth, int *wpa_ie_len);
+#endif /* CONFIG_FRAMEWORK_EXTENSIONS */
 struct rsn_pmksa_cache_entry *
 wpa_auth_pmksa_get_fils_cache_id(struct wpa_authenticator *wpa_auth,
 				 const u8 *sta_addr, const u8 *pmkid);
