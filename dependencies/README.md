@@ -1,18 +1,21 @@
 # Dependencies
 
-Our project uses various dependencies such as ```hostap```, ```libwifi```, and ```wpaspy```.
+Our project uses `hostap` and `libwifi` as dependencies.
 
 ## Hostap
 
 <sup>See [installation and configuration instructions](../setup/README.md).
 
-We provide ```hostap``` (Version 2.9) including the modifications and extensions for our framework.
+We provide ```hostap``` (Version 2.9) which includes the modifications and extensions for our framework.
 
-However, you can choose to download the dependency manually, and then apply our patch:
+If you want to inspect all the applied modifications, then you can execute:
 ```
-git clone -b 'hostap_2_9' --single-branch --depth 1 git://w1.fi/srv/git/hostap.git hostap_2_9
-git apply hostap_2_9.patch
+git clone -b 'hostap_2_9' --single-branch --depth 1 git://w1.fi/srv/git/hostap.git hostap_2_9_original
+diff -r hostap_2_9/ hostap_2_9_original/ -x '*.d' -x '*.o' -x '*.service'
 ```
+
+Note that the file `wpaspy.py` in the `dependencies` directory is a symbolic link to the `wpaspy.py` module of `hostap`.
+This is done to make it easier to import the `wpaspy` module in python.
 
 ## Libwifi
 
@@ -24,6 +27,3 @@ git submodule init
 git submodule update
 ```
 
-## Wpaspy
-
-[Wpaspy](https://w1.fi/cgit/hostap/tree/wpaspy) is a Python-based binding for the _hostap_ control interfaces, allowing us to issue commands.

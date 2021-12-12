@@ -29,7 +29,7 @@ if [ "$CUSTOM_CONFIG" = true ] ; then
 	echo "CONFIG_FRAMEWORK_EXTENSIONS=y" >> .config
 fi
 make clean
-make
+make -j 2
 
 # Build supplicant.
 cd ../wpa_supplicant
@@ -41,4 +41,4 @@ if [ "$CUSTOM_CONFIG" = true ] ; then
 	echo "CONFIG_FRAMEWORK_EXTENSIONS=y" >> .config
 fi
 make clean
-make
+make -j 2
