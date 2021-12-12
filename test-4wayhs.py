@@ -3,7 +3,6 @@ from dependencies.libwifi.wifi import *
 from dependencies.libwifi.crypto import rsn_prf_sha1, aes_wrap_key_withpad
 from library.station import Authenticator
 
-#TODO: Add pbkdf2 to requirements.txt or put it in libwifi....
 from scapy.contrib.wpa_eapol import WPA_key
 from pbkdf2 import PBKDF2
 
