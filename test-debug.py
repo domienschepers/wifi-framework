@@ -13,7 +13,7 @@ class DebugAuthenticator(Test):
 		
 	def generate(self, station):
 		pass
-		
+
 class DebugSupplicant(Test):
 	name = "debug-client"
 	kind = Test.Supplicant

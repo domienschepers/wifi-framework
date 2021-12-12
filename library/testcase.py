@@ -3,8 +3,8 @@ import abc
 # ----------------------------------- Trigger -----------------------------------------
 
 class Trigger():
-	""" Define supported Triggers.
-	"""
+	"""Define supported Triggers."""
+
 	# Supported Triggers.
 	NoTrigger, AfterAuth, Received, Associated, Connected, Disconnected = range(6)
 	
@@ -12,11 +12,12 @@ class Trigger():
 		return ["NoTrigger", "AfterAuth", "Received", \
 			"Associated", "Connected", "Disconnected"][trigger]
 
+
 # ----------------------------------- Action ------------------------------------------
 
 class Action():
-	""" Define supported Actions.
-	"""
+	"""Define supported Actions."""
+
 	# Supported Actions.
 	NoAction, Reconnect, Inject, Function, Receive, Terminate = range(6)
 
@@ -58,11 +59,12 @@ class Action():
 		self.terminate = True
 		self.terminate_delay = delay
 
+
 # ----------------------------------- Test --------------------------------------------
 
 class Test(metaclass=abc.ABCMeta):
-	""" Define high-level test case functionality.
-	"""
+	"""Define high-level test case functionality."""
+
 	# Supported Stations.
 	Authenticator, Supplicant = range(2)
 

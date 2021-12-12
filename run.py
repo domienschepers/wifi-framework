@@ -17,8 +17,7 @@ VERSION = "1.0"
 # ----------------------------------- Helper Functions --------------------------------
 
 def dynamically_load_test(name):
-	""" Avoids us from editing this file when writing new tests.
-	"""
+	"""Avoids us from editing this file when writing new tests."""
 	# Search each file matching our test-template.
 	for test in glob("test-*.py"):
 		module = __import__(test[:-3])

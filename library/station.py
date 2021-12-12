@@ -10,8 +10,7 @@ from library.testcase import Trigger, Action
 # ----------------------------------- Station -----------------------------------------
 
 class Station(Daemon):
-	""" A station is an Authenticator or Supplicant which executes a test case.
-	"""
+	"""A station is an Authenticator or Supplicant which executes a test case."""
 	
 	def __init__(self,options):
 		self.test = options.test()
@@ -110,8 +109,7 @@ class Station(Daemon):
 # ----------------------------------- Authenticator -----------------------------------
 
 class Authenticator(Station):
-	""" Authenticator Station.
-	"""
+	"""Authenticator Station."""
 	
 	def __init__(self,options):
 		super().__init__(options)
@@ -123,8 +121,7 @@ class Authenticator(Station):
 		self.clientmac = None
 	
 	def get_header(self):
-		""" Construct a Dot11-header.
-		"""
+		"""Construct a Dot11-header."""
 		header = Dot11(type="Data", subtype=8, SC=(self.sn << 4) | 0)
 		header.add_payload(Dot11QoS())
 		self.sn += 1
@@ -135,8 +132,7 @@ class Authenticator(Station):
 		return header
 		
 	def handle_wpaspy(self, msg):
-		""" Override the Station/Daemon-handler.
-		"""
+		"""Override the Station/Daemon-handler."""
 		log(DEBUG, "daemon: " + msg)
 		if "AP-STA-ASSOCIATING" in msg:
 			_, clientmac = msg.split()
@@ -154,8 +150,7 @@ class Authenticator(Station):
 # ----------------------------------- Supplicant --------------------------------------
 
 class Supplicant(Station):
-	""" Supplicant Station.
-	"""
+	"""Supplicant Station."""
 
 	def __init__(self,options):
 		super().__init__(options)
@@ -182,8 +177,7 @@ class Supplicant(Station):
 #		self.clear_keys()
 		
 	def get_header(self):
-		""" Construct a Dot11-header.
-		"""
+		"""Construct a Dot11-header."""
 		header = Dot11(type="Data", subtype=8, SC=(self.sn << 4) | 0)
 		header.add_payload(Dot11QoS())
 		self.sn += 1
@@ -194,8 +188,7 @@ class Supplicant(Station):
 		return header
 		
 	def handle_wpaspy(self, msg):
-		""" Override the Station/Daemon-handler.
-		"""
+		"""Override the Station/Daemon-handler."""
 		log(DEBUG, "daemon: " + msg)
 		if "Associated with" in msg:
 			x = re.compile("Associated with (.*)")

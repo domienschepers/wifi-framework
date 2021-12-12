@@ -18,8 +18,7 @@ def log_level2switch(options):
 	return ["-K"]
 
 class Daemon():
-	""" Wi-Fi Daemon.
-	"""
+	"""Wi-Fi Daemon."""
 	
 	# Default configurations.
 	default_hostap = "./dependencies/hostap_2_9"
@@ -48,6 +47,7 @@ class Daemon():
 			self.ctrl_iface = self.default_wpaspy + "/hostapd/" + self.nic_iface
 		else:
 			self.ctrl_iface = self.default_wpaspy + "/wpa_supplicant/" + self.nic_iface
+
 			
 	def __configure_interfaces(self):
 
@@ -81,6 +81,7 @@ class Daemon():
 		set_monitor_mode(self.nic_mon)
 		log(STATUS, f"Using interface {self.nic_mon} ({get_device_driver(self.nic_mon)}) to inject frames.")
 
+
 	def __wpaspy_connect(self):
 		"""
 		Connect to the control interface of hostapd so that we can send commands towards
@@ -107,7 +108,7 @@ class Daemon():
 			log(ERROR, "Please restart it manually and inspect its output.")
 			log(ERROR, "Did you disable Wi-Fi in the network manager? Otherwise it won't start properly.")
 			raise
-			
+
 	def handle_mon(self, p):
 		pass
 
@@ -120,15 +121,18 @@ class Daemon():
 	def handle_tick(self):
 		pass
 
+
 	def inject_mon(self, p):
 		if p is None or not p.haslayer(Dot11):
 			log(WARNING, "Injecting frame on monitor iface without Dot11-layer.")
 		self.sock_mon.send(p)
 
+
 	def inject_eth(self, p):
 		if p is None or not p.haslayer(Ether):
 			log(WARNING, "Injecting frame on ethernet iface witthout Ether-layer.")
 		self.sock_eth.send(p)
+
 
 	def wpaspy_command(self, cmd):
 		# Include console prefix so we can ignore other messages sent over the control interface.
@@ -149,6 +153,7 @@ class Daemon():
 			quit(1)
 			
 		return response[2:]
+
 
 	def __get_command(self):
 	
@@ -173,10 +178,9 @@ class Daemon():
 		
 		cmd += log_level2switch(self.options)
 		return cmd
-		
+
+
 	def run(self):
-		"""
-		"""
 		# Remove old occurrences of the control interface that didn't get cleaned properly
 		subprocess.call(["rm", "-rf", self.ctrl_iface])
 
@@ -216,6 +220,7 @@ class Daemon():
 				self.handle_wpaspy(msg)
 				
 			self.handle_tick()
+
 
 	def stop(self):
 		log(STATUS, "Closing daemon and cleaning up ...")
