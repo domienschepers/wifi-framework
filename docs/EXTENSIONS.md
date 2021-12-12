@@ -2,7 +2,7 @@
 
 Extensions can be made to the framework to support any user-specific requirement.
 
-We discuss how to extend the _hostap_ control interface, as well as how to extend the framework's test case functionality.
+We discuss how to extend the _hostap_ control interface, used by both `hostapd` and `wpa_supplicant`, as well as how to extend the framework's test case functionality.
 
 ## Extending the Control Interface
 
@@ -12,19 +12,18 @@ In _hostap_, Access Points and Clients have a dedicated control interface, imple
 ./dependencies/hostap_2_9/wpa_supplicant/ctrl_iface.c
 ```
 
-Making adjustments to the respective ```ctrl_iface.c``` file will allow us to add new functionality to an access point or client station.
+Making adjustments to the respective `ctrl_iface.c` file will allow us to add new functionality to an access point or client station.
 
 #### Command Prefix
 
-We prepend all control interface commands and responses with a ```>``` prefix.
-
-It allows our framework to identify its own commands and capture its respective responses.
+We prepend all control interface commands and responses with a `> ` prefix.
+This allows the framework to properly identify responses to commands (and not accidently interpret an event as a command response).
 
 #### Example
 
-As an example, we add a ```GET_BSSID``` command to the suppliciant which returns the network's BSSID.
+As an example, we add a `GET_BSSID` command to the suppliciant which returns the network's BSSID.
 
-First, we must edit the function ```wpa_supplicant_ctrl_iface_process``` in ```hostap_2_9/wpa_supplicant/ctrl_iface.c```:
+First, we must edit the function `wpa_supplicant_ctrl_iface_process` in `hostap_2_9/wpa_supplicant/ctrl_iface.c`:
 ```c
 #ifdef CONFIG_FRAMEWORK_EXTENSIONS
 	} else if (os_strcmp(buf, "GET_BSSID") == 0) {
@@ -48,6 +47,17 @@ static int wpa_supplicant_ctrl_iface_get_bssid(
 Since we can pass the ```struct wpa_supplicant``` reference, our function is able to access all station-specific information.
 
 As such, endless new features can be added to a new control interface command.
+
+#### Development
+
+Notice in the above example that the added code is put between "ifdef guards".
+It's recommended to follow this practice so that it's easy to differentiate between code that's part of the official hostap version and our custom extensions.
+
+While compiling the framework the `.config` files will automatically enable these defines by including the following two lines in the cofig:
+```
+CONFIG_TESTING_OPTIONS=y
+CONFIG_FRAMEWORK_EXTENSIONS=y
+```
 
 #### Example Test Case
 
@@ -97,3 +107,4 @@ self.actions[0].set_frame( frame , mon=True , encrypt=True )
 ```
 
 Such functionality eases the definitions of test cases, as the implementation of this functionality can be added to the station class.
+
