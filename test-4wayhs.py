@@ -21,7 +21,7 @@ class FourWayHandshake(Authenticator):
 		p = LLC()/SNAP()/EAPOL(version="802.1X-2004", type="EAPOL-Key")/p
 		p = self.get_header()/p
 
-		log(STATUS, f"Sending frame {repr(p)}")
+		log(STATUS, f"Sending msg1: {repr(p)}")
 		self.sock_mon.send(p)
 
 
@@ -105,7 +105,7 @@ class FourWayHandshake(Authenticator):
 		self.send_msg1()
 
 
-	def handle_connected(self):
+	def handle_started(self):
 		# After hostap started, configure to skip the 4-way handshake
 		# so we can handle it ourselves
 		self.wpaspy_command("SKIP_4WAY 1")

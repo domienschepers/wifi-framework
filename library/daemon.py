@@ -207,7 +207,7 @@ class Daemon():
 		# Now that hostap started we can create the ethernet socket
 		self.sock_eth = L2Socket(type=ETH_P_ALL, iface=self.nic_iface)
 
-		self.handle_connected()
+		self.handle_started()
 
 		# Monitor the virtual monitor interface of the client and perform the needed actions
 		sockets = [self.sock_mon, self.sock_eth, self.wpaspy_ctrl.s]
