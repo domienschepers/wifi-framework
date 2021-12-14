@@ -37,7 +37,13 @@ class Daemon():
 		self.wpaspy_queue = []
 		
 		# Configure interfaces and sockets.
-		self.__configure_interfaces()
+		try:
+			self.__configure_interfaces()
+		except Exception as ex:
+			log(ERROR, "Unable to configure interfaces.")
+			log(ERROR, "Does the interface exist? Are you running as root and in a Python virtualenv?")
+			quit(1)
+
 		self.mac = scapy.arch.get_if_hwaddr(self.nic_iface)
 
 		# The Eterhet socket can only be created once hostap brings the interface up
@@ -54,11 +60,7 @@ class Daemon():
 	def __configure_interfaces(self):
 
 		# 0. Enable Wi-Fi
-		try:
-			subprocess.check_output(["rfkill", "unblock", "wifi"])
-		except Exception as ex:
-			log(ERROR, "Are you running as root (and in a Python virtualenv)?")
-			quit(1)
+		subprocess.check_output(["rfkill", "unblock", "wifi"])
 		self.nic_iface = self.options.iface
 
 		# 1. Check if the interfaces exists
