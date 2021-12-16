@@ -25,6 +25,7 @@ if [ "$CUSTOM_CONFIG" = true ] ; then
 	echo "" >> .config
 	echo "# Configuration changes for the Wi-Fi Framework:"  >> .config
 	echo "CONFIG_IEEE80211N=y" >> .config
+	echo "CONFIG_SAE=y" >> .config
 	echo "CONFIG_TESTING_OPTIONS=y" >> .config
 	echo "CONFIG_FRAMEWORK_EXTENSIONS=y" >> .config
 fi
@@ -37,6 +38,7 @@ cp defconfig .config
 if [ "$CUSTOM_CONFIG" = true ] ; then
 	echo "" >> .config
 	echo "# Configuration changes for the Wi-Fi Framework:" >> .config
+	echo "CONFIG_SAE=y" >> .config
 	echo "CONFIG_TESTING_OPTIONS=y" >> .config
 	echo "CONFIG_FRAMEWORK_EXTENSIONS=y" >> .config
 fi
