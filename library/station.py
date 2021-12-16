@@ -124,10 +124,12 @@ class Authenticator(Station):
 		# Support one client station.
 		self.clientmac = None
 	
-	def get_header(self):
-		"""Construct a Dot11-header."""
-		header = Dot11(type="Data", subtype=8, SC=(self.sn << 4) | 0)
-		header.add_payload(Dot11QoS())
+	def get_header(self, qos=True):
+		"""Construct a Dot11QoS-header."""
+		header = Dot11(type="Data", subtype=0, SC=(self.sn << 4) | 0)
+		if qos is True:
+			header[Dot11].subtype = 8
+			header.add_payload(Dot11QoS())
 		self.sn += 1
 		header.FCfield |= 'from-DS' # From AP.
 		header.addr1 = self.clientmac # Destination.
@@ -181,10 +183,12 @@ class Supplicant(Station):
 		self.wpaspy_command("REASSOCIATE")
 		#self.clear_keys()
 		
-	def get_header(self):
-		"""Construct a Dot11-header."""
-		header = Dot11(type="Data", subtype=8, SC=(self.sn << 4) | 0)
-		header.add_payload(Dot11QoS())
+	def get_header(self, qos=True):
+		"""Construct a Dot11QoS-header."""
+		header = Dot11(type="Data", subtype=0, SC=(self.sn << 4) | 0)
+		if qos is True:
+			header[Dot11].subtype = 8
+			header.add_payload(Dot11QoS())
 		self.sn += 1
 		header.FCfield |= 'to-DS' # To AP.
 		header.addr1 = self.bss # Destination.
