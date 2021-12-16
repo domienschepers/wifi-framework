@@ -71,6 +71,9 @@ class Station(Daemon):
 					time.sleep(act.terminate_delay)
 				self.terminate()
 	
+	def handle_started(self):
+		self.perform_actions(Trigger.NoTrigger)
+		
 	def handle_trigger_associated(self):
 		self.perform_actions(Trigger.Associated)
 		
@@ -210,4 +213,3 @@ class Supplicant(Station):
 			self.handle_trigger_connected()
 		if "CTRL-EVENT-DISCONNECTED" in msg:
 			self.handle_trigger_disconnected()
-	
