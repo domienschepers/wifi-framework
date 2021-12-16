@@ -1,8 +1,8 @@
 # Examples
 
-<sup>See [the source code of all our examples.](../test-examples.py)
-
 Our framework supports a variety of use cases, and here we present some examples together with their usage instructions.
+
+For their implementations, see [the source code of all examples](../test-examples.py).
 
 #### Table of Contents
 1. [Demonstration](#demonstration).
@@ -26,32 +26,30 @@ Specifically, we inject a frame and create a user-defined function to send a pin
 #### Definition
 ```python
 class Demonstration(Test):
-	""" Simplified demonstration presenting the basic test case structure.
-	"""
+	"""Simplified demonstration presenting the basic test case structure."""
 	name = "example-demo"
 	kind = Test.Supplicant
-	
+
 	def __init__(self):
-		""" Initialization of the sequential actions defining the test case.
-		"""
+		"""Initialization of the sequential actions defining the test case."""
 		super().__init__([
 			# Once authenticated, we will inject a frame.
 			Action( trigger=Trigger.AfterAuth, action=Action.Inject ),
 			# Once connected, we will call a user-defined function. 
 			Action( trigger=Trigger.Connected, action=Action.Function )
 		])
-	
+
+
 	def ping(self, station):
-		""" User-defined function, giving us run-time access to the station.
-		""" 
+		"""User-defined function, giving us run-time access to the station.""" 
 		# For example, we will send a command over the control interface. 
 		response = station.wpaspy_command("PING")
 		if "PONG" in response:
 			log(STATUS,'Received a PONG from the control interface.')
-		
+
+
 	def generate(self, station):
-		""" Generate the test case by configuring the defined actions. 
-		"""
+		"""Generate the test case by configuring the defined actions."""
 		
 		# Create a Dot11-frame with dummy payload.
 		frame = station.get_header() # Returns Dot11()-header.
@@ -93,8 +91,7 @@ This example tests weaknesses in access points, by acting as a supplicant.
 #### Definition
 ```python
 class ExamplePMFDeauthCVE(Test):
-	""" Deauthentication vulnerability against an access point (CVE-2019-16275).
-	"""
+	"""Deauthentication vulnerability against an access point (CVE-2019-16275)."""
 	name = "example-pmf-deauth"
 	kind = Test.Supplicant
 	
@@ -105,7 +102,8 @@ class ExamplePMFDeauthCVE(Test):
 			# If the station is disconnected, we can terminate the test.
 			Action( trigger=Trigger.Disconnected, action=Action.Terminate )
 		])
-		
+
+
 	def generate(self, station):
 		
 		# Contruct an invalid Association Request using a Broadcast MAC address.
@@ -146,8 +144,7 @@ This example tests weaknesses in clients, by acting as an access point
 #### Definition
 ```python
 class ExampleKrackZerokey(Test):
-	""" Test if a client is vulnerable to an all-zero key reinstallation attack.
-	"""
+	"""Test if a client is vulnerable to an all-zero key reinstallation attack."""
 	name = "example-krack-zero-key"
 	kind = Test.Authenticator
 	
@@ -160,12 +157,14 @@ class ExampleKrackZerokey(Test):
 			# When we receive such a frame, we can terminate the test.
 			Action( trigger=Trigger.Received, action=Action.Terminate )
 		])
-		
+
+
 	def resend(self, station):
 		# Resend 4-Way Handshake Message 3/4.
 		# https://w1.fi/cgit/hostap/plain/tests/cipher-and-key-mgmt-testing.txt
 		station.wpaspy_command("RESEND_M3 " + station.clientmac )
-	
+
+
 	def receive(self, station, frame):
 		if frame[Dot11].addr2 != station.clientmac:
 			return False
@@ -180,7 +179,8 @@ class ExampleKrackZerokey(Test):
 		log(STATUS, plaintext.summary(), color="orange")
 		log(STATUS,'Client encrypted a frame with an all-zero key!', color="green")
 		return True
-		
+
+
 	def generate(self, station):
 	
 		# Force the client to reinstall the pairwise key.
@@ -216,17 +216,16 @@ ping -I wlan1 1.1.1.1
 
 ## Customized Control Interface Command
 
-<sup>See [our tutorial on extending the control interface.](EXTENSIONS.md)
-
 Test for issuing customized commands on the control interface.
 
 Specifically, we request the supplicant to provide us with the network's BSSID.
 
+For more information, see [our tutorial on extending the control interface](EXTENSIONS.md).
+
 #### Definition
 ```python
 class ExampleGetBSSID(Test):
-	""" Example executing customized control interface commands.
-	"""
+	"""Example executing customized control interface commands."""
 	name = "example-control-iface-extensions"
 	kind = Test.Supplicant
 	
@@ -234,12 +233,14 @@ class ExampleGetBSSID(Test):
 		super().__init__([
 			Action( trigger=Trigger.Connected, action=Action.Function )
 		])
-	
+
+
 	def get_bssid(self, station):
 		log(STATUS,'Sending GET_BSSID request to control interface.')
 		response = station.wpaspy_command("GET_BSSID")
 		log(STATUS,'Received ' + response + '.')
-			
+
+
 	def generate(self, station):
 	
 		# Execute a command and terminate. 

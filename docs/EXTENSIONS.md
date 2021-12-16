@@ -8,8 +8,8 @@ We discuss how to extend the _hostap_ control interface, used by both `hostapd` 
 
 In _hostap_, Access Points and Clients have a dedicated control interface, implemented in the following files: 
 ```
-./dependencies/hostap_2_9/hostapd/ctrl_iface.c
-./dependencies/hostap_2_9/wpa_supplicant/ctrl_iface.c
+/dependencies/hostap_2_9/hostapd/ctrl_iface.c
+/dependencies/hostap_2_9/wpa_supplicant/ctrl_iface.c
 ```
 
 Making adjustments to the respective `ctrl_iface.c` file will allow us to add new functionality to an access point or client station.
@@ -71,20 +71,21 @@ For example, one can add new triggers, or offload common functionality to the st
 
 Stations and test cases are implemented in the following files:
 ```
-./library/station.py
-./library/testcase.py
+/library/station.py
+/library/testcase.py
 ```
 
 #### Example
 
-As an example, we added Supplicant functionality to create a Dot11-header:
+As an example, we added Supplicant functionality to create a Dot11QoS-header:
 
 ```python
-def get_header(self):
-	""" Construct a Dot11-header.
-	"""
-	header = Dot11(type="Data", subtype=8, SC=(self.sn << 4) | 0)
-	header.add_payload(Dot11QoS())
+def get_header(self, qos=True):
+	"""Construct a Dot11QoS-header."""
+	header = Dot11(type="Data", subtype=0, SC=(self.sn << 4) | 0)
+	if qos is True:
+		header[Dot11].subtype = 8
+		header.add_payload(Dot11QoS())
 	self.sn += 1
 	header.FCfield |= 'to-DS' # To AP.
 	header.addr1 = self.bss # Destination.
@@ -93,13 +94,13 @@ def get_header(self):
 	return header
 ```
 
-The Dot11-header is constructed using information directly known to the Supplicant (for example, its own MAC address).
+The Dot11QoS-header is constructed using information directly known to the Supplicant (for example, its own MAC address).
 
 In a test case, we can then write the following:
 
 ```python
-# Create a Dot11-frame with dummy payload.
-frame = station.get_header() # Returns Dot11()-header.
+# Create a Dot11QoS-frame with dummy payload.
+frame = station.get_header() # Returns Dot11QoS()-header.
 frame /= LLC()/SNAP()/Raw(b'A'*32)
 
 # Load the frame into our action, and let us sent it encrypted.

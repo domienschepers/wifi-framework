@@ -25,7 +25,7 @@ It also creates a virtual python environment to manage all dependencies for the 
 
 ## Libwifi
 
-The libwifi library is tracked as a git submodule and you will have to manually pull it using:
+The [libwifi](https://github.com/vanhoefm/libwifi) library is tracked as a git submodule and you will have to manually pull it using:
 ```
 git submodule init
 git submodule update

@@ -14,7 +14,7 @@ The framework accomplishes this by executing _test cases_ on top of the _hostap_
 	<em>Overview of the Wi-Fi Daemon and Framework components.</em>
 </p>
 
-If you are new to performing Wi-Fi experiments on Linux it's highly recommended to first read the [libwifi Linux Tutorial](https://github.com/vanhoefm/libwifi/blob/master/docs/linux_tutorial.md).
+If you are new to performing Wi-Fi experiments on Linux it is highly recommended to first read the [libwifi Linux Tutorial](https://github.com/vanhoefm/libwifi/blob/master/docs/linux_tutorial.md).
 When you are implementing basic Wi-Fi attacks without the need to reuse Linux functionality, then the framework provides limited advantages and you can instead consider directly implementing attacks in Scapy and optionally use the [libwifi](https://github.com/vanhoefm/libwifi) library.
 
 
@@ -22,9 +22,9 @@ When you are implementing basic Wi-Fi attacks without the need to reuse Linux fu
 
 To use the framework:
 
-1. [Install it](setup)
+1. [Install it](setup).
 
-2. Read the [usage tutorial](docs/USAGE.md)
+2. Read the [usage tutorial](docs/USAGE.md).
 
 
 <a id="id-example"></a>
@@ -32,7 +32,7 @@ To use the framework:
 
 Say you want to test whether a client ever encrypts frames using an all-zero key.
 This can happen during a [key reinstallation attack](https://www.krackattacks.com/#demo).
-By using the framework you don't need to reimplement all functionality of an access point,
+By using the framework you do not need to reimplement all functionality of an access point,
 but only need to write the following test case:
 
 ```python
@@ -77,7 +77,7 @@ You can run the above test case using simulated Wi-Fi radios as follows:
 ```
 ./setup/setup-hwsim.sh 4
 source setup/venv/bin/activate
-./run.py wlan1 example-demo
+./run.py wlan1 example-krack-zero-key
 ```
 
 You can connect to the created access point to test it:

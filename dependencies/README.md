@@ -1,10 +1,10 @@
 # Dependencies
 
-Our project uses `hostap` and `libwifi` as dependencies.
+The framework uses `hostap` and `libwifi` as dependencies.
+
+For more information on its setup, see the [installation and configuration instructions](../setup/README.md).
 
 ## Hostap
-
-<sup>See [installation and configuration instructions](../setup/README.md).
 
 We provide ```hostap``` (Version 2.9) which includes the modifications and extensions for our framework.
 

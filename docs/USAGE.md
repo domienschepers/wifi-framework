@@ -1,10 +1,10 @@
 # Framework Usage
 
-We'll explain the basic idea on how to use the framework.
+We will explain the basic idea on how to use the framework.
 Remember to first [install](../setup) it.
 
 
-## Before every usage
+## Before Every Usage
 
 Before every usage the python environment has to be activated:
 ```
@@ -26,9 +26,9 @@ You can use the following script to easily create these simulated wireless inter
 This will create four simulated wireless interface (when not providing an argument it creates two).
 
 
-## Running and creating test cases
+## Running and Creating Test Cases
 
-You can [write test cases](#id-test-cases) that allow you to reuse Wi-Fi functionality of Linux to more easily implement attacks/tests.
+You can write test cases that allow you to reuse Wi-Fi functionality of Linux to more easily implement attacks/tests.
 For instance, the framework can connect to (protected) Wi-Fi networks for you, the framework will broadcast beacons for you, and in general any Wi-Fi functionality of Linux can be reused to more quickly implement attacks/tests.
 
 Two types of test cases can be written:
@@ -40,7 +40,7 @@ Two types of test cases can be written:
   These take more code to write but are more flexible.
 
 
-#### Action-based test cases
+#### Action-based Test Cases
 
 An action-based test case defines a number of sequential actions (for example, a sequence of custom Wi-Fi frames to inject into the network) which are executed upon the activation of their respective trigger.
 The next action is this sequence is executed when trigger conditions becomes true.
@@ -70,7 +70,7 @@ Supported Triggers that specify when an action should be executed are:
 You can look at [test case examples](EXAMPLES.md) to further learn how to write action-based test cases.
 
 
-#### Generic test cases
+#### Generic Test Cases
 
 If you need more flexibility, you can create a generic test case.
 An example of such a test case is an [implementation of the 4-way handshake](../test-4wayhs.py) in Scapy.
@@ -78,7 +78,7 @@ An example of such a test case is an [implementation of the 4-way handshake](../
 These test cases are created by inheriting from the `Daemon`, `Supplicant`, or `Authenticator` class.
 A simple plan to write such test cases is:
 
-1. Take the `Supplicant` or `Authenticator` class in [station.py](../library/station.py) and put it a file `test-*.py1`.
+1. Take the `Supplicant` or `Authenticator` class in [station.py](../library/station.py) and put it in a file `test-*.py`.
 
 2. Now modify the client or AP behaviour as you see fit.
 
@@ -114,7 +114,7 @@ Furthermore, usage of a user space daemon ensures the framework:
 
 
 <a id="id-network-configuration"></a>
-#### Specifying a network configuration
+#### Specifying a Network Configuration
 
 The framework by default runs the test cases against a WPA2 network.
 To change this, the configuration files for `hostapd` and `wpa_supplicant` must be updated.
@@ -151,7 +151,8 @@ usage: hostap.py [-h] [--config CONFIG] [--binary BINARY] [--debug DEBUG] [--ap]
 
 The framework is designed to be easily extended to support any user-specific needs.
 For example, the _hostap_ control interface can be extended with new commands, and test cases can be extended with new functionality.
-See [[instructions for extending the framework](EXTENSIONS.md) for more information.
+
+See [instructions for extending the framework](EXTENSIONS.md) for more information.
 
 
 ## Troubleshooting
