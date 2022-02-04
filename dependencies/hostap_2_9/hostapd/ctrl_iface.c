@@ -2358,6 +2358,21 @@ static int hostapd_get_gtk(struct hostapd_data *hapd,  char *buf, size_t buflen)
 }
 
 
+static int hostapd_get_igtk(struct hostapd_data *hapd,  char *buf, size_t buflen)
+{
+	int pos;
+
+	if (hapd->last_gtk_len <= 0)
+		return -1;
+	if (buflen < hapd->last_gtk_len + 20)
+		return -1;
+
+	pos  = wpa_snprintf_hex(buf, buflen,  hapd->last_igtk, hapd->last_igtk_len);
+	pos += os_snprintf(buf + pos, buflen - pos, " %d\n", hapd->last_igtk_key_idx);
+	return pos;
+}
+
+
 static int hostapd_ctrl_skip_4way(struct hostapd_data *hapd, const char *cmd)
 {
 	fuzzer_skip_4way = atoi(cmd);
@@ -3250,6 +3265,8 @@ static int hostapd_ctrl_iface_receive_process(struct hostapd_data *hapd,
 #ifdef CONFIG_FRAMEWORK_EXTENSIONS
 	} else if (os_strcmp(buf, "GET_GTK") == 0) {
 		reply_len = hostapd_get_gtk(hapd, reply, reply_size);
+	} else if (os_strcmp(buf, "GET_IGTK") == 0) {
+		reply_len = hostapd_get_igtk(hapd, reply, reply_size);
 	} else if (os_strncmp(buf, "SKIP_4WAY ", 10) == 0) {
 		if (hostapd_ctrl_skip_4way(hapd, buf + 10) < 0 )
 			reply_len = -1;
