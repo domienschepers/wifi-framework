@@ -22,7 +22,7 @@ When you are implementing basic Wi-Fi attacks without the need to reuse Linux fu
 
 To use the framework:
 
-1. [Install it](setup).
+1. Install it by running `./setup.sh`. See [setup](setup) to know what this script does.
 
 2. Read the [usage tutorial](docs/USAGE.md).
 
@@ -80,7 +80,7 @@ source setup/venv/bin/activate
 ./run.py wlan1 example-krack-zero-key
 ```
 
-You can connect to the created access point to test it:
+You can connect to the created access point to test it (network `testnetwork` with password `passphrase`):
 ```
 ./hostap.py wlan2
 ```
