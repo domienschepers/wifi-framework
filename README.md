@@ -109,5 +109,5 @@ This work was published at ACM Conference on Security and Privacy in Wireless an
 Works that have used this framework or a similar one:
 
 - [FragAttacks: Fragmentation & Aggregation Attacks](https://github.com/vanhoefm/fragattacks)
-
+- [On the Robustness of Wi-Fi Deauthentication Countermeasures](https://papers.mathyvanhoef.com/wisec2022.pdf)
 
