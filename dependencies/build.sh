@@ -8,7 +8,7 @@ if [[ $# -gt 1 ]] ; then
 fi
 
 # Take in command line arguments.
-HOSTAP=${1:-"hostap_2_9"} # Default to hostap_2_9.
+HOSTAP=${1:-"hostap_2_10"} # Default to hostap_2_10.
 CUSTOM_CONFIG=true
 
 # Sanity checks.
@@ -26,6 +26,8 @@ if [ "$CUSTOM_CONFIG" = true ] ; then
 	echo "# Configuration changes for the Wi-Fi Framework:"  >> .config
 	echo "CONFIG_IEEE80211N=y" >> .config
 	echo "CONFIG_SAE=y" >> .config
+	echo "CONFIG_IEEE80211R=y" >> .config
+	echo "CONFIG_INTERWORKING=y" >> .config
 	echo "CONFIG_TESTING_OPTIONS=y" >> .config
 	echo "CONFIG_FRAMEWORK_EXTENSIONS=y" >> .config
 fi

@@ -21,7 +21,7 @@ class Daemon():
 	"""Wi-Fi Daemon."""
 	
 	# Default configurations.
-	default_hostap = "./dependencies/hostap_2_9"
+	default_hostap = "./dependencies/hostap_2_10"
 	default_config = "./setup"
 	default_wpaspy = "/var/run"
 
