@@ -217,7 +217,7 @@ class Daemon():
 
 			if self.terminated:
 				break
-			sel = select(sockets, [], [], 0.5)
+			sel = select.select(sockets, [], [], 0.5)
 			
 			if self.sock_mon in sel[0]:
 				p = self.sock_mon.recv()
