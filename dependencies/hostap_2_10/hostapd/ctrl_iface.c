@@ -82,6 +82,7 @@
 extern int fuzzer_skip_4way;
 #endif /* CONFIG_FRAMEWORK_EXTENSIONS */
 
+
 static void hostapd_ctrl_iface_send(struct hostapd_data *hapd, int level,
 				    enum wpa_msg_type type,
 				    const char *buf, size_t len);
@@ -2579,66 +2580,6 @@ static int hostapd_ctrl_resend_group_m1(struct hostapd_data *hapd,
 					plain ? restore_tk : NULL, hapd, sta);
 }
 
-#ifdef CONFIG_FRAMEWORK_EXTENSIONS
-static int hostapd_get_gtk(struct hostapd_data *hapd,  char *buf, size_t buflen)
-{
-	int pos;
-
-	if (hapd->last_gtk_len <= 0)
-		return -1;
-	if (buflen < hapd->last_gtk_len + 20)
-		return -1;
-
-	pos  = wpa_snprintf_hex(buf, buflen,  hapd->last_gtk, hapd->last_gtk_len);
-	pos += os_snprintf(buf + pos, buflen - pos, " %d\n", hapd->last_gtk_key_idx);
-	return pos;
-}
-
-
-static int hostapd_get_igtk(struct hostapd_data *hapd,  char *buf, size_t buflen)
-{
-	int pos;
-
-	if (hapd->last_gtk_len <= 0)
-		return -1;
-	if (buflen < hapd->last_gtk_len + 20)
-		return -1;
-
-	pos  = wpa_snprintf_hex(buf, buflen,  hapd->last_igtk, hapd->last_igtk_len);
-	pos += os_snprintf(buf + pos, buflen - pos, " %d\n", hapd->last_igtk_key_idx);
-	return pos;
-}
-
-
-static int hostapd_ctrl_skip_4way(struct hostapd_data *hapd, const char *cmd)
-{
-	fuzzer_skip_4way = atoi(cmd);
-	wpa_printf(MSG_DEBUG, "Setting skip_4way to %d", fuzzer_skip_4way);
-	return 0;
-}
-
-
-static int hostapd_ctrl_get_rsne(struct hostapd_data *hapd, char *buf,
-				 size_t buflen)
-{
-	const u8 *wpa_ie = NULL;
-	int wpa_ie_len = 0;
-
-	if (hapd->wpa_auth == NULL) {
-		wpa_printf(MSG_DEBUG, "The AP has no WPA state (hapd->wpa_auth is NULL)");
-		return -1;
-	}
-
-	wpa_ie = wpa_auth_rsne_get(hapd->wpa_auth, &wpa_ie_len);
-	if (wpa_ie == NULL) {
-		wpa_printf(MSG_DEBUG, "The AP has no stored WPA IE (wpa_ie is NULL)");
-		return -1;
-	}
-
-	return wpa_snprintf_hex(buf, buflen, wpa_ie, wpa_ie_len);
-}
-#endif /* CONFIG_FRAMEWORK_EXTENSIONS */
-
 
 static int hostapd_ctrl_rekey_ptk(struct hostapd_data *hapd, const char *cmd)
 {
@@ -2723,6 +2664,67 @@ static int hostapd_ctrl_register_frame(struct hostapd_data *hapd,
 	return hostapd_drv_register_frame(hapd, type, match, match_len,
 					  multicast);
 }
+
+
+#ifdef CONFIG_FRAMEWORK_EXTENSIONS
+static int hostapd_get_gtk(struct hostapd_data *hapd,  char *buf, size_t buflen)
+{
+	int pos;
+
+	if (hapd->last_gtk_len <= 0)
+		return -1;
+	if (buflen < hapd->last_gtk_len + 20)
+		return -1;
+
+	pos  = wpa_snprintf_hex(buf, buflen,  hapd->last_gtk, hapd->last_gtk_len);
+	pos += os_snprintf(buf + pos, buflen - pos, " %d\n", hapd->last_gtk_key_idx);
+	return pos;
+}
+
+
+static int hostapd_get_igtk(struct hostapd_data *hapd,  char *buf, size_t buflen)
+{
+	int pos;
+
+	if (hapd->last_gtk_len <= 0)
+		return -1;
+	if (buflen < hapd->last_gtk_len + 20)
+		return -1;
+
+	pos  = wpa_snprintf_hex(buf, buflen,  hapd->last_igtk, hapd->last_igtk_len);
+	pos += os_snprintf(buf + pos, buflen - pos, " %d\n", hapd->last_igtk_key_idx);
+	return pos;
+}
+
+
+static int hostapd_ctrl_skip_4way(struct hostapd_data *hapd, const char *cmd)
+{
+	fuzzer_skip_4way = atoi(cmd);
+	wpa_printf(MSG_DEBUG, "Setting skip_4way to %d", fuzzer_skip_4way);
+	return 0;
+}
+
+
+static int hostapd_ctrl_get_rsne(struct hostapd_data *hapd, char *buf,
+				 size_t buflen)
+{
+	const u8 *wpa_ie = NULL;
+	int wpa_ie_len = 0;
+
+	if (hapd->wpa_auth == NULL) {
+		wpa_printf(MSG_DEBUG, "The AP has no WPA state (hapd->wpa_auth is NULL)");
+		return -1;
+	}
+
+	wpa_ie = wpa_auth_rsne_get(hapd->wpa_auth, &wpa_ie_len);
+	if (wpa_ie == NULL) {
+		wpa_printf(MSG_DEBUG, "The AP has no stored WPA IE (wpa_ie is NULL)");
+		return -1;
+	}
+
+	return wpa_snprintf_hex(buf, buflen, wpa_ie, wpa_ie_len);
+}
+#endif /* CONFIG_FRAMEWORK_EXTENSIONS */
 
 #endif /* CONFIG_TESTING_OPTIONS */
 
@@ -3830,6 +3832,12 @@ static int hostapd_ctrl_iface_receive_process(struct hostapd_data *hapd,
 	} else if (os_strcmp(buf, "REKEY_GTK") == 0) {
 		if (wpa_auth_rekey_gtk(hapd->wpa_auth) < 0)
 			reply_len = -1;
+	} else if (os_strncmp(buf, "GET_PMK ", 8) == 0) {
+		reply_len = hostapd_ctrl_get_pmk(hapd, buf + 8, reply,
+						 reply_size);
+	} else if (os_strncmp(buf, "REGISTER_FRAME ", 15) == 0) {
+		if (hostapd_ctrl_register_frame(hapd, buf + 16) < 0)
+			reply_len = -1;
 #ifdef CONFIG_FRAMEWORK_EXTENSIONS
 	} else if (os_strcmp(buf, "GET_GTK") == 0) {
 		reply_len = hostapd_get_gtk(hapd, reply, reply_size);
@@ -3841,12 +3849,6 @@ static int hostapd_ctrl_iface_receive_process(struct hostapd_data *hapd,
 	} else if (os_strcmp(buf, "GET_RSNE") == 0) {
 		reply_len = hostapd_ctrl_get_rsne(hapd, reply, reply_size);
 #endif /* CONFIG_FRAMEWORK_EXTENSIONS */
-	} else if (os_strncmp(buf, "GET_PMK ", 8) == 0) {
-		reply_len = hostapd_ctrl_get_pmk(hapd, buf + 8, reply,
-						 reply_size);
-	} else if (os_strncmp(buf, "REGISTER_FRAME ", 15) == 0) {
-		if (hostapd_ctrl_register_frame(hapd, buf + 16) < 0)
-			reply_len = -1;
 #endif /* CONFIG_TESTING_OPTIONS */
 	} else if (os_strncmp(buf, "CHAN_SWITCH ", 12) == 0) {
 		if (hostapd_ctrl_iface_chan_switch(hapd->iface, buf + 12))
