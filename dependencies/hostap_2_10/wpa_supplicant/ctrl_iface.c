@@ -12383,6 +12383,11 @@ char * wpa_supplicant_ctrl_iface_process(struct wpa_supplicant *wpa_s,
 	} else if (os_strncmp(buf, "MSCS ", 5) == 0) {
 		if (wpas_ctrl_iface_configure_mscs(wpa_s, buf + 5))
 			reply_len = -1;
+#ifdef CONFIG_FRAMEWORK_EXTENSIONS
+	} else if (os_strcmp(buf, "GET_BSSID") == 0) {
+		reply_len = wpa_supplicant_ctrl_iface_get_bssid(
+			wpa_s, reply, reply_size);
+#endif /* CONFIG_FRAMEWORK_EXTENSIONS */
 #ifdef CONFIG_PASN
 	} else if (os_strncmp(buf, "PASN_START ", 11) == 0) {
 		if (wpas_ctrl_iface_pasn_start(wpa_s, buf + 11) < 0)
@@ -12404,11 +12409,6 @@ char * wpa_supplicant_ctrl_iface_process(struct wpa_supplicant *wpa_s,
 	} else if (os_strncmp(buf, "DSCP_QUERY ", 11) == 0) {
 		if (wpas_ctrl_iface_send_dscp_query(wpa_s, buf + 11))
 			reply_len = -1;
-#ifdef CONFIG_FRAMEWORK_EXTENSIONS
-	} else if (os_strcmp(buf, "GET_BSSID") == 0) {
-		reply_len = wpa_supplicant_ctrl_iface_get_bssid(
-			wpa_s, reply, reply_size);
-#endif /* CONFIG_FRAMEWORK_EXTENSIONS */
 	} else {
 		os_memcpy(reply, "UNKNOWN COMMAND\n", 16);
 		reply_len = 16;
