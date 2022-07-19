@@ -27,7 +27,14 @@ class Station(Daemon):
 		# Station-generic MAC addresses and packet numbers.
 		self.bss = None
 		self.pn = 5
-		
+
+		# IP address info
+		self.ip = None
+		self.peerip = None
+		self.obtained_ip = False
+		self.pending_trigger = None
+		self.arp_sock = None
+
 	def perform_actions(self, trigger):
 		if self.test == None:
 			return
@@ -70,7 +77,15 @@ class Station(Daemon):
 				if act.terminate_delay:
 					time.sleep(act.terminate_delay)
 				self.terminate()
-	
+			# Get an IP as a client, or as an AP wait until the client requested an AP.
+			# Unless we already have an IP, in that case nothing must be done.
+			if act.action == Action.GetIp and not self.obtained_ip:
+				self.pending_trigger = trigger
+				self.get_ip()
+				log(DEBUG, "Waiting with next action until we have an IP")
+				# Don't execute the next trigger yet, this is done after we got an IP.
+				break
+
 	def handle_started(self):
 		self.perform_actions(Trigger.NoTrigger)
 		
@@ -106,6 +121,19 @@ class Station(Daemon):
 		if self.receive_mon and self.receive_func(self,frame):
 			self.receive_mon = False
 			self.handle_trigger_received()
+
+	def set_ip_addresses(self, ip, peerip):
+		self.ip = ip
+		self.peerip = peerip
+		self.obtained_ip = True
+
+		if self.pending_trigger != None:
+			log(DEBUG, "Continuing actions that waited on IP address")
+			trigger = self.pending_trigger
+			self.pending_trigger = None
+			self.perform_actions(trigger)
+		else:
+			log(DEBUG, "Got an IP address")
 
 	def terminate(self):
 		log(STATUS, "Disconnecting.", color="green")
@@ -168,7 +196,12 @@ class Supplicant(Station):
 		# Supplicant-specific sequence numbers and encryption keys.
 		self.sn = 10
 		self.tk = self.gtk = None
-		
+
+		self.time_retrans_dhcp = None
+		self.dhcp_offer_frame =  None
+		self.dhcp_xid = None
+		self.arp_sock = None
+
 	def load_keys(self):
 		tk = self.wpaspy_command("GET tk")
 		self.tk = bytes.fromhex(tk)
@@ -187,7 +220,76 @@ class Supplicant(Station):
 			self.wpaspy_command("SET reassoc_same_bss_optim " + str(optimized))
 		self.wpaspy_command("REASSOCIATE")
 		#self.clear_keys()
-		
+
+	def get_ip(self):
+		if not self.dhcp_offer_frame:
+			self.send_dhcp_discover()
+		else:
+			self.send_dhcp_request(self.dhcp_offer_frame)
+
+		self.time_retrans_dhcp = time.time() + 2.5
+
+	def send_dhcp_discover(self):
+		if self.dhcp_xid == None:
+			self.dhcp_xid = random.randint(0, 2**31)
+
+		rawmac = bytes.fromhex(self.mac.replace(':', ''))
+		req = Ether(dst="ff:ff:ff:ff:ff:ff", src=self.mac)/IP(src="0.0.0.0", dst="255.255.255.255")
+		req = req/UDP(sport=68, dport=67)/BOOTP(op=1, chaddr=rawmac, xid=self.dhcp_xid)
+		req = req/DHCP(options=[("message-type", "discover"), "end"])
+
+		log(STATUS, f"Sending DHCP discover with XID {self.dhcp_xid}")
+		self.inject_eth(req)
+
+	def send_dhcp_request(self, offer):
+		rawmac = bytes.fromhex(self.mac.replace(':', ''))
+		myip = offer[BOOTP].yiaddr
+		sip = offer[BOOTP].siaddr
+		xid = offer[BOOTP].xid
+
+		reply = Ether(dst="ff:ff:ff:ff:ff:ff", src=self.mac)/IP(src="0.0.0.0", dst="255.255.255.255")
+		reply = reply/UDP(sport=68, dport=67)/BOOTP(op=1, chaddr=rawmac, xid=self.dhcp_xid)
+		reply = reply/DHCP(options=[("message-type", "request"), ("requested_addr", myip),
+					    ("hostname", "fragclient"), "end"])
+
+		log(STATUS, f"Sending DHCP request with XID {self.dhcp_xid}")
+		self.inject_eth(reply)
+
+	def handle_eth_dhcp(self, p):
+		"""Handle packets needed to connect and request an IP"""
+		if not DHCP in p: return
+
+		req_type = next(opt[1] for opt in p[DHCP].options if isinstance(opt, tuple) and opt[0] == 'message-type')
+
+		# DHCP Offer
+		if req_type == 2:
+			log(STATUS, "Received DHCP offer, sending DHCP request.")
+			self.send_dhcp_request(p)
+			self.dhcp_offer_frame = p
+
+		# DHCP Ack
+		elif req_type == 5:
+			clientip = p[BOOTP].yiaddr
+			serverip = p[IP].src
+			self.time_retrans_dhcp = None
+			log(STATUS, f"Received DHCP ack. My ip is {clientip} and router is {serverip}.", color="green")
+
+			self.arp_sock = ARP_sock(sock=self.sock_eth, IP_addr=ip, ARP_addr=self.mac)
+			self.set_ip_addresses(clientip, serverip)
+
+	def handle_eth(self, frame):
+		if self.arp_sock != None:
+			self.arp_sock.reply(frame)
+		if BOOTP in frame and frame[BOOTP].xid == self.dhcp_xid:
+			self.handle_eth_dhcp(frame)
+
+		super().handle_eth(frame)
+
+	def handle_tick(self):
+		if self.time_retrans_dhcp != None and time.time() > self.time_retrans_dhcp:
+			log(WARNING, "Retransmitting DHCP message", color="orange")
+			self.get_ip()
+
 	def get_header(self, qos=True):
 		"""Construct a Dot11QoS-header."""
 		header = Dot11(type="Data", subtype=0, SC=(self.sn << 4) | 0)
