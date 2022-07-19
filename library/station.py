@@ -172,9 +172,11 @@ class Supplicant(Station):
 	def load_keys(self):
 		tk = self.wpaspy_command("GET tk")
 		self.tk = bytes.fromhex(tk)
-		gtk = self.wpaspy_command("GET gtk")
+		gtk, idx, seq = self.wpaspy_command("GET_GTK").split()
 		self.gtk = bytes.fromhex(gtk)
-		log(STATUS, "Loaded pairwise and group encryption keys.")
+		self.gtk_idx = int(idx)
+		self.gtk_seq = int(seq, 16)
+		log(STATUS, f"Loaded pairwise and group encryption keys.")
 	
 	def clear_keys(self):
 		self.tk = self.gtk = None
