@@ -152,7 +152,7 @@ class Daemon():
 			response = self.wpaspy_ctrl.recv()
 			
 		if "UNKNOWN COMMAND" in response:
-			log(ERROR, "wpa_supplicant did not recognize the command %s." % cmd.split()[0])
+			log(ERROR, "daemon did not recognize the command %s." % cmd.split()[0])
 			log(ERROR, "Did you (re)compile wpa_supplicant/hostapd?")
 			quit(1)
 		elif "FAIL" in response:
