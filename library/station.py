@@ -154,7 +154,15 @@ class Authenticator(Station):
 		
 		# Support one client station.
 		self.clientmac = None
-	
+
+	@property
+	def peermac(self):
+		"""
+		Property that both the Station and Authenticator have so test can be written to be
+		more easily switchable between Test.Supplicant and Test.Authenticator.
+		"""
+		return self.clientmac
+
 	def get_header(self, qos=True):
 		"""Construct a Dot11QoS-header."""
 		header = Dot11(type="Data", subtype=0, SC=(self.sn << 4) | 0)
@@ -201,6 +209,14 @@ class Supplicant(Station):
 		self.dhcp_offer_frame =  None
 		self.dhcp_xid = None
 		self.arp_sock = None
+
+	@property
+	def peermac(self):
+		"""
+		Property that both the Station and Authenticator have so test can be written to be
+		more easily switchable between Test.Supplicant and Test.Authenticator.
+		"""
+		return self.bss
 
 	def load_keys(self):
 		tk = self.wpaspy_command("GET tk")
