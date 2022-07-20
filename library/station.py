@@ -101,6 +101,15 @@ class Station(Daemon):
 		self.perform_actions(Trigger.Received)
 		
 	def handle_trigger_connected(self):
+		# - The Authenticator currently doesn't have an Authenticated event, but
+		#   only a Connected event. So we need to get the keys here if they haven't
+		#   been loaded yet.
+		# - Execute this before running any testcase triggers, becuase those
+		#   triggers might want to use the keys.
+		# FIXME: Assure both Supplicant and Authenticator have the same triggers?
+		if not self.tk:
+			self.load_keys()
+
 		self.perform_actions(Trigger.Connected)
 		
 	def handle_trigger_disconnected(self):
@@ -151,6 +160,7 @@ class Authenticator(Station):
 		
 		# Authenticator-specific sequence numbers.
 		self.sn = 10
+		self.tk = self.gtk = None
 		
 		# Support one client station.
 		self.clientmac = None
@@ -162,6 +172,15 @@ class Authenticator(Station):
 		more easily switchable between Test.Supplicant and Test.Authenticator.
 		"""
 		return self.clientmac
+
+	def load_keys(self):
+		tk = self.wpaspy_command("GET_TK " + self.clientmac)
+		self.tk = bytes.fromhex(tk)
+		gtk, idx, seq = self.wpaspy_command("GET_GTK").split()
+		self.gtk = bytes.fromhex(gtk)
+		self.gtk_idx = int(idx)
+		self.gtk_seq = int(seq, 16)
+		log(STATUS, f"Loaded pairwise and group encryption keys.")
 
 	def get_header(self, qos=True):
 		"""Construct a Dot11QoS-header."""
@@ -183,6 +202,7 @@ class Authenticator(Station):
 			_, clientmac = msg.split()
 			self.clientmac = clientmac
 			self.handle_trigger_associated()
+		# FIXME: There is no authenticated event?
 		if "AP-STA-CONNECTED" in msg:
 			self.handle_trigger_connected()
 		if "AP-STA-DISCONNECTED" in msg:
@@ -326,6 +346,7 @@ class Supplicant(Station):
 			x = re.compile("Associated with (.*)")
 			self.bss = x.search(msg).group(1)
 			self.handle_trigger_associated()
+		# FIXME: How is authenticated different from connected?
 		if "WPA: Key negotiation completed with" in msg or \
 			"WPA: EAPOL processing complete" in msg:
 			self.handle_trigger_authenticated()
