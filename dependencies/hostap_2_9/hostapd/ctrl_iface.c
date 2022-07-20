@@ -61,6 +61,9 @@
 #include "config_file.h"
 #include "ctrl_iface.h"
 
+#ifdef CONFIG_FRAMEWORK_EXTENSIONS
+#include "ap/wpa_auth_i.h"
+#endif /* CONFIG_FRAMEWORK_EXTENSIONS */
 
 #define HOSTAPD_CLI_DUP_VALUE_MAX_LEN 256
 
@@ -2343,6 +2346,31 @@ static int hostapd_ctrl_resend_group_m1(struct hostapd_data *hapd,
 
 
 #ifdef CONFIG_FRAMEWORK_EXTENSIONS
+static int hostapd_get_tk(struct hostapd_data *hapd, const char *txtaddr, char *buf, size_t buflen)
+{
+	u8 addr[ETH_ALEN];
+	struct sta_info *sta;
+	int klen;
+	int res;
+
+	wpa_printf(MSG_DEBUG, "CTRL_IFACE GET_TK %s", txtaddr);
+
+	if (hwaddr_aton(txtaddr, addr)) return -1;
+	sta = ap_get_sta(hapd, addr);
+	if (!sta) return -1;
+
+	if (sta->wpa_sm == NULL) return -1;
+	klen = wpa_cipher_key_len(sta->wpa_sm->pairwise);
+	if (klen <= 0) return -1;
+
+	res = wpa_snprintf_hex(buf, buflen, sta->wpa_sm->PTK.tk, klen);
+	buf[res++] = '\n';
+	buf[res] = '\0';
+
+	return res;
+}
+
+
 static int hostapd_get_gtk(struct hostapd_data *hapd,  char *buf, size_t buflen)
 {
 	int pos;
@@ -3263,6 +3291,8 @@ static int hostapd_ctrl_iface_receive_process(struct hostapd_data *hapd,
 		if (wpa_auth_rekey_gtk(hapd->wpa_auth) < 0)
 			reply_len = -1;
 #ifdef CONFIG_FRAMEWORK_EXTENSIONS
+	} else if (os_strncmp(buf, "GET_TK ", 7) == 0) {
+		reply_len = hostapd_get_tk(hapd, buf + 7, reply, reply_size);
 	} else if (os_strcmp(buf, "GET_GTK") == 0) {
 		reply_len = hostapd_get_gtk(hapd, reply, reply_size);
 	} else if (os_strcmp(buf, "GET_IGTK") == 0) {
