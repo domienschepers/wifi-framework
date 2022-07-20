@@ -164,6 +164,8 @@ class Authenticator(Station):
 		
 		# Support one client station.
 		self.clientmac = None
+		self.dhcp = None
+		self.obtained_ip = False
 
 	@property
 	def peermac(self):
@@ -211,7 +213,46 @@ class Authenticator(Station):
 				return
 			self.clientmac = None
 			self.handle_trigger_disconnected()
-			
+
+	def get_ip(self):
+		self.dhcp = DHCP_sock(sock=self.sock_eth,
+						domain='example.com',
+						pool=Net('192.168.100.0/24'),
+						network='192.168.100.0/24',
+						gw='192.168.100.254',
+						renewal_time=600, lease_time=3600)
+		# Configure gateway IP that will reply to ARP and ping requests
+		subprocess.check_output(["ifconfig", self.nic_iface, "192.168.100.254"])
+
+		log(STATUS, f"Waiting on client to get IP")
+
+	def monitor_dhcp(self, p):
+		if not DHCP in p or not self.clientmac in self.dhcp.leases: return
+
+		# This assures we only mark it as connected after receiving a DHCP Request
+		req_type = next(opt[1] for opt in p[DHCP].options if isinstance(opt, tuple) and opt[0] == 'message-type')
+		if req_type != 3: return
+
+		peerip = self.dhcp.leases[self.clientmac]
+		log(STATUS, f"Client {self.clientmac} with IP {peerip} has connected")
+		self.set_ip_addresses('192.168.100.254', peerip)
+
+	def handle_eth(self, p):
+		# Ignore clients not connected to the AP
+		if p[Ether].src != self.clientmac:
+			return
+
+		# Let clients get IP addresses
+		if self.dhcp:
+			# Let scapy reply to possible DHCP packets
+			self.dhcp.reply(p)
+			# Monitor DHCP messages to know when a client received an IP address
+			if not self.obtained_ip:
+				self.monitor_dhcp(p)
+
+		super().handle_eth(p)
+
+
 # ----------------------------------- Supplicant --------------------------------------
 
 class Supplicant(Station):
