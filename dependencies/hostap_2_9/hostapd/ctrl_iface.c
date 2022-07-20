@@ -2373,6 +2373,7 @@ static int hostapd_get_tk(struct hostapd_data *hapd, const char *txtaddr, char *
 
 static int hostapd_get_gtk(struct hostapd_data *hapd,  char *buf, size_t buflen)
 {
+	u8 rsc[WPA_KEY_RSC_LEN] = {0};
 	int pos;
 
 	if (hapd->last_gtk_len <= 0)
@@ -2380,8 +2381,14 @@ static int hostapd_get_gtk(struct hostapd_data *hapd,  char *buf, size_t buflen)
 	if (buflen < hapd->last_gtk_len + 20)
 		return -1;
 
+	if (hostapd_get_seqnum(hapd->conf->iface, hapd, NULL, hapd->last_gtk_key_idx, rsc) != 0)
+		wpa_printf(MSG_ERROR, "Failed to get packet number for group key (key_idx=%d)",
+				   hapd->last_gtk_key_idx);
+
 	pos  = wpa_snprintf_hex(buf, buflen,  hapd->last_gtk, hapd->last_gtk_len);
-	pos += os_snprintf(buf + pos, buflen - pos, " %d\n", hapd->last_gtk_key_idx);
+	pos += os_snprintf(buf + pos, buflen - pos, " %d ", hapd->last_gtk_key_idx);
+	pos += wpa_snprintf_hex(buf + pos, buflen - pos, rsc, WPA_KEY_RSC_LEN);
+	pos += os_snprintf(buf + pos, buflen - pos, "\n");
 	return pos;
 }
 
