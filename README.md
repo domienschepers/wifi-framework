@@ -110,4 +110,5 @@ Works that have used this framework or a similar one:
 
 - [FragAttacks: Fragmentation & Aggregation Attacks](https://github.com/vanhoefm/fragattacks)
 - [On the Robustness of Wi-Fi Deauthentication Countermeasures](https://papers.mathyvanhoef.com/wisec2022.pdf)
+- [Attacking WPA3: New Vulnerabilities and Exploit Framework (HITBSecConf)](https://conference.hitb.org/hitbsecconf2022sin/session/attacking-wpa3-new-vulnerabilities-and-exploit-framework/). See [WPA3.md](docs/WPA3.md) for test cases.
 
