@@ -1109,6 +1109,10 @@ int ap_check_sa_query_timeout(struct hostapd_data *hapd, struct sta_info *sta)
 			       HOSTAPD_MODULE_IEEE80211,
 			       HOSTAPD_LEVEL_DEBUG,
 			       "association SA Query timed out");
+#ifdef CONFIG_FRAMEWORK_EXTENSIONS
+		if (hapd->disconnect_on_sa_timeout)
+			ap_sta_disconnect(hapd, sta, sta->addr, WLAN_REASON_UNSPECIFIED);
+#endif /* CONFIG_FRAMEWORK_EXTENSIONS */
 		sta->sa_query_timed_out = 1;
 		os_free(sta->sa_query_trans_id);
 		sta->sa_query_trans_id = NULL;

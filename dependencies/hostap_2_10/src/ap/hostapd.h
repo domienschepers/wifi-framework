@@ -414,6 +414,9 @@ struct hostapd_data {
 	unsigned int dpp_ignore_netaccesskey_mismatch:1;
 #endif /* CONFIG_TESTING_OPTIONS */
 #endif /* CONFIG_DPP */
+#ifdef CONFIG_FRAMEWORK_EXTENSIONS
+	unsigned int disconnect_on_sa_timeout:1;
+#endif /* CONFIG_FRAMEWORK_EXTENSIONS */
 
 #ifdef CONFIG_AIRTIME_POLICY
 	unsigned int num_backlogged_sta;

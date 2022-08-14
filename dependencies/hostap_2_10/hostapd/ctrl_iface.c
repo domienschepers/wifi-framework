@@ -1504,6 +1504,10 @@ static int hostapd_ctrl_iface_set(struct hostapd_data *hapd, char *cmd)
 		dpp_version_override = atoi(value);
 #endif /* CONFIG_DPP */
 #endif /* CONFIG_TESTING_OPTIONS */
+#ifdef CONFIG_FRAMEWORK_EXTENSIONS
+	} else if (os_strcasecmp(cmd, "disconnect_on_sa_timeout") == 0) {
+		hapd->disconnect_on_sa_timeout = atoi(value);
+#endif /* CONFIG_FRAMEWORK_EXTENSIONS */
 #ifdef CONFIG_MBO
 	} else if (os_strcasecmp(cmd, "mbo_assoc_disallow") == 0) {
 		int val;
@@ -2759,6 +2763,29 @@ static int hostapd_ctrl_get_rsne(struct hostapd_data *hapd, char *buf,
 
 	return wpa_snprintf_hex(buf, buflen, wpa_ie, wpa_ie_len);
 }
+
+
+static int hostapd_ctrl_iface_start_sa_query(struct hostapd_data *hapd,
+				       const char *txtaddr)
+{
+	struct sta_info *sta;
+	u8 addr[ETH_ALEN];
+
+	wpa_printf(MSG_DEBUG, "CTRL_IFACE START_SA_QUERY %s", txtaddr);
+
+	if (hwaddr_aton(txtaddr, addr))
+		return -1;
+
+	sta = ap_get_sta(hapd, addr);
+	if (!sta) {
+		wpa_printf(MSG_DEBUG, "Unable to get sta_info entry for " MACSTR, MAC2STR(addr));
+		return -1;
+	}
+
+	ap_sta_start_sa_query(hapd, sta);
+
+	return 0;
+}
 #endif /* CONFIG_FRAMEWORK_EXTENSIONS */
 
 #endif /* CONFIG_TESTING_OPTIONS */
@@ -3885,6 +3912,9 @@ static int hostapd_ctrl_iface_receive_process(struct hostapd_data *hapd,
 			reply_len = -1;
 	} else if (os_strcmp(buf, "GET_RSNE") == 0) {
 		reply_len = hostapd_ctrl_get_rsne(hapd, reply, reply_size);
+	} else if (os_strncmp(buf, "START_SA_QUERY ", 15) == 0) {
+		if (hostapd_ctrl_iface_start_sa_query(hapd, buf + 15))
+			reply_len = -1;
 #endif /* CONFIG_FRAMEWORK_EXTENSIONS */
 #endif /* CONFIG_TESTING_OPTIONS */
 	} else if (os_strncmp(buf, "CHAN_SWITCH ", 12) == 0) {
