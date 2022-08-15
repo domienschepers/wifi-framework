@@ -978,6 +978,10 @@ struct hostapd_config {
 	struct wpabuf *civic;
 	int stationary_ap;
 
+#ifdef CONFIG_FRAMEWORK_EXTENSIONS
+	int force_40mhz;
+#endif /* CONFIG_FRAMEWORK_EXTENSIONS */
+
 	int ieee80211ax;
 #ifdef CONFIG_IEEE80211AX
 	struct he_phy_capabilities_info he_phy_capab;

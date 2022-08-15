@@ -4423,6 +4423,10 @@ static int hostapd_config_fill(struct hostapd_config *conf,
 			return 1;
 		}
 #endif /* CONFIG_AIRTIME_POLICY */
+#ifdef CONFIG_FRAMEWORK_EXTENSIONS
+	} else if (os_strcmp(buf, "force_40mhz") == 0) {
+		conf->force_40mhz = atoi(pos);
+#endif /* CONFIG_FRAMEWORK_EXTENSIONS */
 #ifdef CONFIG_MACSEC
 	} else if (os_strcmp(buf, "macsec_policy") == 0) {
 		int macsec_policy = atoi(pos);

@@ -244,6 +244,10 @@ struct hostapd_config * hostapd_config_defaults(void)
 	conf->acs_num_scans = 5;
 #endif /* CONFIG_ACS */
 
+#ifdef CONFIG_FRAMEWORK_EXTENSIONS
+	conf->force_40mhz = 0;
+#endif /* CONFIG_FRAMEWORK_EXTENSIONS */
+
 #ifdef CONFIG_IEEE80211AX
 	conf->he_op.he_rts_threshold = HE_OPERATION_RTS_THRESHOLD_MASK >>
 		HE_OPERATION_RTS_THRESHOLD_OFFSET;

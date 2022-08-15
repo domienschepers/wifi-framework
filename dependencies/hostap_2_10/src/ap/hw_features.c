@@ -332,6 +332,13 @@ static void ieee80211n_check_scan(struct hostapd_iface *iface)
 		oper40 = ieee80211n_check_40mhz_2g4(iface, scan_res);
 	wpa_scan_results_free(scan_res);
 
+#ifdef CONFIG_FRAMEWORK_EXTENSIONS
+	if (!oper40 && iface->conf->force_40mhz) {
+		wpa_printf(MSG_INFO, "Framework: will force to 40MHz due to force_40mhz");
+		oper40 = 1;
+	}
+#endif /* CONFIG_FRAMEWORK_EXTENSIONS */
+
 	iface->secondary_ch = iface->conf->secondary_channel;
 	if (!oper40) {
 		wpa_printf(MSG_INFO, "20/40 MHz operation not permitted on "

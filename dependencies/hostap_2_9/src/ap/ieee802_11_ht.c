@@ -258,6 +258,11 @@ void hostapd_2040_coex_action(struct hostapd_data *hapd,
 		return;
 	}
 
+#ifdef CONFIG_FRAMEWORK_EXTENSIONS
+	if (iface->conf->force_40mhz)
+		return;
+#endif /* CONFIG_FRAMEWORK_EXTENSIONS */
+
 	/* 20/40 BSS Coexistence element */
 	bc_ie = (struct ieee80211_2040_bss_coex_ie *) data;
 	if (bc_ie->element_id != WLAN_EID_20_40_BSS_COEXISTENCE ||
