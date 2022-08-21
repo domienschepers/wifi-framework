@@ -1,5 +1,7 @@
 # WPA3-Related Test Cases
 
+<sup>See the [Framework README](https://github.com/domienschepers/wifi-framework) for general information about the framework.</sup>
+
 All combined, these test cases (will) form a WPA3 exploitation framework. There
 are two main targets: denial-of-service attacks despite using Management Frame
 Protection (MFP) and network-based attacks against SAE Public Key (SAE-PK).
