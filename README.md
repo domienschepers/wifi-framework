@@ -103,7 +103,7 @@ See [a detailed description of all our examples](docs/EXAMPLES.md) for more exam
 
 This work was published at ACM Conference on Security and Privacy in Wireless and Mobile Networks (WiSec '21):
 
-- [DEMO: A Framework to Test and Fuzz Wi-Fi Devices](https://dl.acm.org/doi/10.1145/3448300.3468261)
+- [DEMO: A Framework to Test and Fuzz Wi-Fi Devices](https://dl.acm.org/doi/10.1145/3448300.3468261) ([pdf](https://papers.mathyvanhoef.com/wisec2021-demo.pdf))
 
 
 Works that have used this framework or a similar one:
@@ -112,4 +112,4 @@ Works that have used this framework or a similar one:
 - [FragAttacks: Fragmentation & Aggregation Attacks](https://github.com/vanhoefm/fragattacks)
 - [On the Robustness of Wi-Fi Deauthentication Countermeasures](https://papers.mathyvanhoef.com/wisec2022.pdf)
 - [Attacking WPA3: New Vulnerabilities and Exploit Framework (HITBSecConf)](https://conference.hitb.org/hitbsecconf2022sin/session/attacking-wpa3-new-vulnerabilities-and-exploit-framework/). See [WPA3.md](docs/WPA3.md) for test cases.
-
+- [Framing Frames: Bypassing Wi-Fi Encryption by Manipulating Transmit Queues](https://github.com/domienschepers/wifi-framing) ([pdf](https://papers.mathyvanhoef.com/usenix2023-wifi.pdf))
