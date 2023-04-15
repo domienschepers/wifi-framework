@@ -110,6 +110,6 @@ Works that have used this framework or a similar one:
 
 - [Systematically Analyzing Vulnerabilities in the Connection Establishment Phase of Wi-Fi Systems](http://rahbari.csec.rit.edu/papers/Systematically_naureen.pdf)
 - [FragAttacks: Fragmentation & Aggregation Attacks](https://github.com/vanhoefm/fragattacks)
-- [On the Robustness of Wi-Fi Deauthentication Countermeasures](https://papers.mathyvanhoef.com/wisec2022.pdf)
+- [On the Robustness of Wi-Fi Deauthentication Countermeasures](https://github.com/domienschepers/wifi-deauthentication) ([pdf](https://papers.mathyvanhoef.com/wisec2022.pdf))
 - [Attacking WPA3: New Vulnerabilities and Exploit Framework (HITBSecConf)](https://conference.hitb.org/hitbsecconf2022sin/session/attacking-wpa3-new-vulnerabilities-and-exploit-framework/). See [WPA3.md](docs/WPA3.md) for test cases.
 - [Framing Frames: Bypassing Wi-Fi Encryption by Manipulating Transmit Queues](https://github.com/domienschepers/wifi-framing) ([pdf](https://papers.mathyvanhoef.com/usenix2023-wifi.pdf))
