@@ -65,8 +65,8 @@ class Daemon():
 
 		# 1. Check if the interfaces exists
 		try:
-			scapy.arch.get_if_index(self.nic_iface)
-		except IOError:
+			scapy.arch.get_if_addr(self.nic_iface)
+		except ValueError:
 			log(ERROR, f"Interface {self.nic_iface} doesn't appear to exist.")
 			quit(1)
 
@@ -76,8 +76,8 @@ class Daemon():
 
 		# Only create a new monitor interface if it does not yet exist
 		try:
-			scapy.arch.get_if_index(self.nic_mon)
-		except IOError:
+			scapy.arch.get_if_addr(self.nic_mon)
+		except ValueError:
 			subprocess.call(["iw", self.nic_mon, "del"], stdout=subprocess.PIPE, stdin=subprocess.PIPE)
 			subprocess.check_output(["iw", self.nic_iface, "interface", "add", self.nic_mon, "type", "monitor"])
 

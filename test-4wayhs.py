@@ -3,7 +3,6 @@ from dependencies.libwifi.wifi import *
 from dependencies.libwifi.crypto import rsn_prf_sha1, aes_wrap_key_withpad
 from library.station import Authenticator
 
-from scapy.contrib.wpa_eapol import WPA_key
 from pbkdf2 import PBKDF2
 
 class FourWayHandshake(Authenticator):
@@ -14,10 +13,13 @@ class FourWayHandshake(Authenticator):
 		self.anonce = random.randbytes(32)
 		self.replay_counter += 1
 
-		p = WPA_key(descriptor_type=2,
-					key_info=0x008a,
-					replay_counter=struct.pack(">Q", self.replay_counter),
-					nonce=self.anonce)
+		p = EAPOL_KEY(key_descriptor_type="RSN",
+					has_key_mic=0,
+					key_ack=1,
+					key_type="Pairwise",
+					key_descriptor_type_version="HMAC-SHA1-128+AES-128",
+					key_replay_counter=self.replay_counter,
+					key_nonce=self.anonce)
 		p = LLC()/SNAP()/EAPOL(version="802.1X-2004", type="EAPOL-Key")/p
 		p = self.get_header()/p
 
@@ -26,16 +28,16 @@ class FourWayHandshake(Authenticator):
 
 
 	def process_msg2(self, p):
-		self.snonce = p[WPA_key].nonce
+		self.snonce = p[EAPOL_KEY].key_nonce
 		log(STATUS, f"Received snonce {self.snonce}")
 
 		self.derive_ptk()
 
 		eapol = p[EAPOL].copy()
-		eapol.wpa_key_mic = b"\x00" * 20
+		eapol.key_mic = b"\x00" * 20
 		mic = hmac.new(self.ptk[0:16], bytes(eapol), hashlib.sha1).digest()[0:16]
 		log(STATUS, f"Calculated MIC: {mic}")
-		log(STATUS, f"Received MIC:   {p[EAPOL].wpa_key_mic}")
+		log(STATUS, f"Received MIC:   {p[EAPOL].key_mic}")
 
 
 	def send_msg3(self):
@@ -63,15 +65,21 @@ class FourWayHandshake(Authenticator):
 		ciphertext = aes_wrap_key_withpad(kekkey, key_data)
 		log(STATUS, f"ciphertext: {ciphertext}")
 
-		eapol = WPA_key(descriptor_type=2,
-					key_info=0x13CA,
+		eapol = EAPOL_KEY(key_descriptor_type="RSN",
+					encrypted_key_data=1,
+					secure=1,
+					has_key_mic=1,
+					key_ack=1,
+					install=1,
+					key_type="Pairwise",
+					key_descriptor_type_version="HMAC-SHA1-128+AES-128",
 					len=len(gtk),
-					replay_counter=struct.pack(">Q", self.replay_counter),
-					nonce=self.anonce,
-					wpa_key_length=len(ciphertext),
-					wpa_key=ciphertext)
+					key_replay_counter=self.replay_counter,
+					key_nonce=self.anonce,
+					key_length=len(ciphertext),
+					key=ciphertext)
 		eapol = EAPOL(version="802.1X-2004", type="EAPOL-Key")/eapol
-		eapol.wpa_key_mic = hmac.new(self.ptk[0:16], bytes(eapol), hashlib.sha1).digest()[0:16]
+		eapol.key_mic = hmac.new(self.ptk[0:16], bytes(eapol), hashlib.sha1).digest()[0:16]
 
 		p = LLC()/SNAP()/eapol
 		p = self.get_header()/p
@@ -122,9 +130,9 @@ class FourWayHandshake(Authenticator):
 		log(STATUS, f"Received {repr(p)} length={len(p)}")
 
 		# Message 4 can be detected because the key data field is empty:
-		if WPA_key in p and p[WPA_key].wpa_key_length == 0:
+		if EAPOL_KEY in p and p[EAPOL_KEY].key_length == 0:
 			log(STATUS, "Received message 4, handshake complete!")
-			
+
 		# Otherwise assume it's message 2
 		else:
 			self.process_msg2(p)
