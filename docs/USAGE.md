@@ -24,6 +24,7 @@ You can use the following script to easily create these simulated wireless inter
 ./setup-hwsim.sh 4
 ```
 This will create four simulated wireless interface (when not providing an argument it creates two).
+You can also manually load the `mac80211_hwsim` module using `modprobe` or similar.
 
 
 ## Running and Creating Test Cases
@@ -34,10 +35,10 @@ For instance, the framework can connect to (protected) Wi-Fi networks for you, t
 Two types of test cases can be written:
 
 - **Action-based test cases** that inherit from the `Test` class.
-  These are typically easier to write.
+  These are typically easier and shorter to write.
 
 - **Generic test cases** that (indirectly) inherit from the `Daemon` class.
-  These take more code to write but are more flexible.
+  These take more code to write but give you full control over the client or AP.
 
 
 #### Action-based Test Cases

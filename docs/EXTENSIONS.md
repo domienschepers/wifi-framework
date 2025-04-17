@@ -6,18 +6,23 @@ We discuss how to extend the _hostap_ control interface, used by both `hostapd` 
 
 ## Extending the Control Interface
 
-In _hostap_, Access Points and Clients have a dedicated control interface, implemented in the following files: 
+In _hostap_, Access Points and Clients have a dedicated control interface. Other programs can send
+commands to _hostap_ over this control interface, which is implemented using UNIX domain sockets.
+The control interface will also send events (status messages) over this control interface (e.g. when
+a client connected to the access point). This control interface is implemented in the following files: 
 ```
 /dependencies/hostap_2_9/hostapd/ctrl_iface.c
 /dependencies/hostap_2_9/wpa_supplicant/ctrl_iface.c
 ```
-
 Making adjustments to the respective `ctrl_iface.c` file will allow us to add new functionality to an access point or client station.
+
 
 #### Command Prefix
 
-We prepend all control interface commands and responses with a `> ` prefix.
-This allows the framework to properly identify responses to commands (and not accidently interpret an event as a command response).
+When using the control interface, we need to differentiate between command responses and events (status messages)
+that hostap may send at any time. To accomplish this, we prepend all control interface commands and responses with
+a `> ` prefix. This allows the framework to properly identify responses to commands (and not accidently interpret
+an event as a command response).
 
 #### Example
 
