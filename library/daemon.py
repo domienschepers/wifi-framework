@@ -40,7 +40,7 @@ class Daemon():
 		try:
 			self.__configure_interfaces()
 		except Exception as ex:
-			log(ERROR, "Unable to configure interfaces.")
+			log(ERROR, "Unable to configure interfaces: " + str(ex))
 			log(ERROR, "Does the interface exist? Are you running as root and in a Python virtualenv?")
 			quit(1)
 
