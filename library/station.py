@@ -1,5 +1,5 @@
 from scapy.layers.dot11 import Dot11, Dot11QoS, Ether
-import abc
+import abc, ipaddress
 
 # Import dependencies and libraries.
 from dependencies.libwifi.wifi import *
@@ -29,6 +29,7 @@ class Station(Daemon):
 		self.pn = 5
 
 		# IP address info
+		self.use_ipv6 = False
 		self.ip = None
 		self.peerip = None
 		self.obtained_ip = False
@@ -79,8 +80,9 @@ class Station(Daemon):
 				self.terminate()
 			# Get an IP as a client, or as an AP wait until the client requested an AP.
 			# Unless we already have an IP, in that case nothing must be done.
-			if act.action == Action.GetIp and not self.obtained_ip:
+			if act.action in [Action.GetIp, Action.GetIp6] and not self.obtained_ip:
 				self.pending_trigger = trigger
+				self.use_ipv6 = act.action == Action.GetIp6
 				self.get_ip()
 				log(DEBUG, "Waiting with next action until we have an IP")
 				# Don't execute the next trigger yet, this is done after we got an IP.
@@ -165,6 +167,7 @@ class Authenticator(Station):
 		# Support one client station.
 		self.clientmac = None
 		self.dhcp = None
+		self.time_retrans_icmpv6ra = None
 		self.obtained_ip = False
 
 	@property
@@ -214,6 +217,21 @@ class Authenticator(Station):
 			self.clientmac = None
 			self.handle_trigger_disconnected()
 
+	def send_icmpv6ra(self):
+		adv = Ether(dst="33:33:00:00:00:01", src=self.mac) \
+			/ IPv6(dst="ff02::1", src="fe80::a00:27ff:fec6:2f54") \
+			/ ICMPv6ND_RA() \
+			/ ICMPv6NDOptSrcLLAddr(lladdr=self.mac) \
+			/ ICMPv6NDOptPrefixInfo(prefixlen=64, prefix="2001:db8::", L=1, A=1)
+
+		log(STATUS, f"Sending ICMPv6 Router Advertisement")
+		self.inject_eth(adv)
+
+	def get_ipv6(self):
+		# Advertise ICMPv6 Router Advertisement
+		self.send_icmpv6ra()
+		self.time_retrans_icmpv6ra = time.time() + 2.5
+
 	def get_ip(self):
 		self.dhcp = DHCP_sock(sock=self.sock_eth,
 						domain='example.com',
@@ -223,6 +241,12 @@ class Authenticator(Station):
 						renewal_time=600, lease_time=3600)
 		# Configure gateway IP that will reply to ARP and ping requests
 		subprocess.check_output(["ifconfig", self.nic_iface, "192.168.100.254"])
+
+		if self.use_ipv6:
+			# Configure gateway IPv6 that will reply to ICMPv6 Neighbor Solicitation`
+			subprocess.check_output(f"ip addr replace fe80::a00:27ff:fec6:2f54/64 dev {self.nic_iface} scope link".split())
+			subprocess.check_output(f"ip addr replace 2001:db8::1/64 dev {self.nic_iface}".split())
+			self.get_ipv6()
 
 		log(STATUS, f"Waiting on client to get IP")
 
@@ -237,6 +261,14 @@ class Authenticator(Station):
 		log(STATUS, f"Client {self.clientmac} with IP {peerip} has connected")
 		self.set_ip_addresses('192.168.100.254', peerip)
 
+	def monitor_ipv6(self, p):
+		# Sniff frames to see if the client started using an IPv6 address
+		if not IPv6 in p: return
+		if not ipaddress.IPv6Address(p[IPv6].src) in ipaddress.IPv6Network("fe80::/10"): return
+
+		self.set_ip_addresses('fe80::a00:27ff:fec6:2f54', p[IPv6].src)
+		self.time_retrans_icmpv6ra = None
+
 	def handle_eth(self, p):
 		# Ignore clients not connected to the AP
 		if p[Ether].src != self.clientmac:
@@ -248,9 +280,17 @@ class Authenticator(Station):
 			self.dhcp.reply(p)
 			# Monitor DHCP messages to know when a client received an IP address
 			if not self.obtained_ip:
-				self.monitor_dhcp(p)
+				if self.use_ipv6:
+					self.monitor_ipv6(p)
+				else:
+					self.monitor_dhcp(p)
 
 		super().handle_eth(p)
+
+	def handle_tick(self):
+		if self.time_retrans_icmpv6ra != None and time.time() > self.time_retrans_icmpv6ra:
+			log(WARNING, "Retransmitting ICMPv6 Router Advertisement", color="orange")
+			self.get_ipv6()
 
 
 # ----------------------------------- Supplicant --------------------------------------
@@ -299,6 +339,8 @@ class Supplicant(Station):
 		#self.clear_keys()
 
 	def get_ip(self):
+		assert self.use_ipv6 == False, "Support of IPv6 when acting as client not yet added"
+
 		if not self.dhcp_offer_frame:
 			self.send_dhcp_discover()
 		else:

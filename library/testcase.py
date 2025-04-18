@@ -19,7 +19,7 @@ class Action():
 	"""Define supported Actions."""
 
 	# Supported Actions.
-	NoAction, GetIp, Reconnect, Inject, Function, Receive, Terminate = range(7)
+	NoAction, GetIp, GetIp6, Reconnect, Inject, Function, Receive, Terminate = range(8)
 
 	def __init__(self, trigger, action):
 		self.trigger = trigger
