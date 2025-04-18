@@ -154,3 +154,115 @@ class GroupToClient(Test):
 		self.actions[2].set_receive(self.receive, eth=True)
 		self.actions[3].set_terminate(delay=1)
 
+
+class GroupToClientArp6(Test):
+	"""Send a unicast ARP packet inside a broadcast data frame."""
+	name = "group-hole196-ipv6"
+	kind = Test.Authenticator
+
+	def __init__(self):
+		"""Initialization of the sequential actions defining the test case."""
+		super().__init__([
+			# Wait on the supplicant to get an IP address.
+			Action(trigger=Trigger.Connected, action=Action.GetIp6),
+
+			# After that inject unicast ICMP ping in multiple broadcast frames.
+			Action(trigger=Trigger.Connected, action=Action.Function),
+
+			# Monitor for ICMP ping replies to our IP address.
+			Action(trigger=Trigger.NoTrigger, action=Action.Receive),
+
+			# Stop the test case once a reply has been received.
+			Action(trigger=Trigger.Received, action=Action.Terminate)
+		])
+
+
+	def inject_as_group(self, station):
+		frame = Ether(dst="ff:ff:ff:ff:ff:ff", src=station.mac) \
+				/ IPv6(src=station.ip, dst=station.peerip) \
+				/ ICMPv6EchoRequest() \
+				/ Raw(b"icmp_ping_test")
+		log(STATUS, "Injecting frame: " + repr(frame))
+
+		for i in range(6):
+			frame[ICMPv6EchoRequest].id = i
+			station.inject_eth(frame)
+			# Against some devices we need to be fast with sending the frame, to assure it
+			# arrives before the client enters sleep mode. Against others we need to be slow,
+			# to assure it has configured the IP address first. This sleep provides a balance
+			# between injecting fast and also slow. Since group-addressed frames don't get
+			# ACK'ed/retransmitted, sending it multiple times also increases reliability.
+			time.sleep(i * 0.1)
+
+		log(STATUS, f"Done injecting, encapsulation and encryption was offloaded to kernel")
+
+
+	def receive(self, station, frame):
+		if ICMPv6EchoReply in frame and frame[IPv6].dst == station.ip \
+			and b"icmp_ping_test" in raw(frame):
+			log(STATUS, f"Received frame: " + repr(frame))
+			log(STATUS, "Got an ICMP reply!", color="green")
+			return True
+
+
+	def generate(self, station):
+		"""Generate the test case by configuring the defined actions."""
+		self.actions[1].set_function(self.inject_as_group)
+		self.actions[2].set_receive(self.receive, eth=True)
+		self.actions[3].set_terminate(delay=1)
+
+
+class GroupToClientArp(Test):
+	"""Send a unicast ARP packet inside a broadcast data frame."""
+	name = "group-arp-unicast"
+	kind = Test.Authenticator
+
+	def __init__(self):
+		"""Initialization of the sequential actions defining the test case."""
+		super().__init__([
+			# Wait on the supplicant to get an IP address.
+			Action(trigger=Trigger.Connected, action=Action.GetIp),
+
+			# After that inject unicast ICMP ping in multiple broadcast frames.
+			Action(trigger=Trigger.Connected, action=Action.Function),
+
+			# Monitor for ICMP ping replies to our IP address.
+			Action(trigger=Trigger.NoTrigger, action=Action.Receive),
+
+			# Stop the test case once a reply has been received.
+			Action(trigger=Trigger.Received, action=Action.Terminate)
+		])
+
+
+	def inject_as_group(self, station):
+		frame = Ether(dst="ff:ff:ff:ff:ff:ff", src=station.mac) \
+				/ARP(hwsrc=station.mac, psrc=station.ip, hwdst=station.peermac, pdst=station.peerip)
+		log(STATUS, "Injecting frame: " + repr(frame))
+
+		for i in range(6):
+			station.inject_eth(frame)
+			# Against some devices we need to be fast with sending the frame, to assure it
+			# arrives before the client enters sleep mode. Against others we need to be slow,
+			# to assure it has configured the IP address first. This sleep provides a balance
+			# between injecting fast and also slow. Since group-addressed frames don't get
+			# ACK'ed/retransmitted, sending it multiple times also increases reliability.
+			time.sleep(i * 0.1)
+
+		log(STATUS, f"Done injecting, encapsulation and encryption was offloaded to kernel")
+
+
+	def receive(self, station, frame):
+		if ARP in frame and frame[ARP].op == 2 \
+		    and frame[ARP].hwsrc == station.peermac and frame[ARP].psrc == station.peerip \
+		    and frame[ARP].hwdst == station.mac and frame[ARP].pdst == station.ip:
+			log(STATUS, f"Received frame: " + repr(frame))
+			log(STATUS, "Got an ARP reply!", color="green")
+			return True
+
+
+	def generate(self, station):
+		"""Generate the test case by configuring the defined actions."""
+		self.actions[1].set_function(self.inject_as_group)
+		self.actions[2].set_receive(self.receive, eth=True)
+		self.actions[3].set_terminate(delay=1)
+
